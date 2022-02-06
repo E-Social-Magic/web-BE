@@ -1,0 +1,29 @@
+{
+  "name": "toapp-at-rs",
+  "version": "1.0.0",
+  "description": "create a to dos list",
+  "main": "app.js",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node ./bin/www.js",
+    "dev": "nodemon --experimental-modules ./bin/www.js"
+  },
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
+    "debug": "~2.6.9",
+    "dotenv": "^10.0.0",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "http-status": "^1.5.0",
+    "jade": "~1.11.0",
+    "mongoose": "^6.1.3",
+    "morgan": "~1.9.1",
+    "pug": "^3.0.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/longnguyen-2k/to-dos-app.git"
+  }
+}
