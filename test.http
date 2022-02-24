@@ -13,12 +13,3 @@ content-type: application/json
 }
 
 ###
-POST http://localhost:3000/signup HTTP/1.1
-content-type: application/json
-
-{
-    "username": "Admin",
-    "email": "huan@gmail.com",
-    "password": "huan111",
-    "confirm_password": "huan111"
-}

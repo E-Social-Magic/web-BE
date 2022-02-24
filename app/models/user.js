@@ -2,13 +2,13 @@ import mongoose from 'mongoose';
 
 const schema = new mongoose.Schema(
   {
-    username: {type: String, required: true, maxLength: 100},
-      email: {type: String, required: false, maxLength: 100},
-      password: {type: String, required: false, minLength: 6},
-      googleID: {type: String, required: false},
-      facebookID: {type: String, required: false},
-      githubID: {type: String, required: false},
-      role: {type: String, required: true}
+    username: { type: String, required: true, maxLength: 100 },
+    email: { type: String, required: false, maxLength: 100 },
+    password: { type: String, required: false, minLength: 6 },
+    googleID: { type: String, required: false },
+    facebookID: { type: String, required: false },
+    githubID: { type: String, required: false },
+    role: { type: String, required: true }
   },
   { timestamps: true }
 );
