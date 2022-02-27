@@ -30,7 +30,7 @@ export const createPost = [
     (req, res) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            res.json({ title: 'Create Account', account: req.body, errors: errors.array() });
+            res.json({ post: req.body, errors: errors.array() });
             return;
         }
         else {

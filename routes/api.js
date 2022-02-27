@@ -2,6 +2,8 @@ import express from 'express';
 const router = express.Router();
 import passport from '../config/passport.js';
 import * as userController from '../app/http/controllers/user.js';
+import * as postController from '../app/http/controllers/post.js';
+import * as commentController from '../app/http/controllers/comment.js';
 
 router.get('/signup',
   function (req, res, next) {
@@ -67,10 +69,15 @@ router.get('/logout',
     res.status(200).json({ success: true, msg: 'Logout success' });
   });
 
-// router.get('/posts', listPost)
-// router.get('/post/:id', detailPost)
-// router.post('/post/new', userController.checkAuthenticated, createPost)
-// router.put('/post/:id/edit', userController.checkAuthenticated, editPost)
-// router.delete('/post/:id', userController.checkAuthenticated, deletePost)
+router.get('/posts', postController.listPost);
+router.get('/post/:id', postController.detailPost);
+router.post('/post/new', userController.checkAuthenticated, postController.createPost);
+router.put('/post/:id/edit', userController.checkAuthenticated, postController.editPost);
+router.delete('/post/:id', userController.checkAuthenticated, postController.deletePost);
 
+router.get('/comments', commentController.listComment);
+router.get('/comment/:id', commentController.detailComment);
+router.post('/comment/new', userController.checkAuthenticated, commentController.createComment);
+router.put('/comment/:id/edit', userController.checkAuthenticated, commentController.editComment);
+router.delete('/comment/:id', userController.checkAuthenticated, commentController.deleteComment);
 export default router;
