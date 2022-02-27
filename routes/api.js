@@ -18,13 +18,59 @@ router.post('/login',
   function (req, res) {
     res.status(200).json({ success: true, msg: 'Login success' });
   },
-  function(err, req, res, next) {
+  function (err, req, res, next) {
     console.log(req.message);
     res.status(400).json({
       success: req.isAuthenticated(),
       err: err.message
     });
   },
-  );
+);
+
+router.get('/login/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+router.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login', failureMessage: true }),
+  function (req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/');
+  });
+
+//router login fb
+router.get('/login/facebook',
+  passport.authenticate('facebook', { scope: ['email'] })
+);
+
+router.get('/auth/facebook/callback',
+  passport.authenticate('facebook', { failureRedirect: '/login', failureMessage: true }),
+  function (req, res) {
+    res.redirect('/');
+  });
+
+router.post('/verify', userController.createAccount);
+
+router.get('/sendmail_forget',
+  function (req, res, next) {
+    res.json({ err: undefined });
+  });
+
+router.post('/sendmail_forget', userController.sendmailFogot);
+
+router.post('/new_password', userController.updatePassword);
+
+//router logout
+router.get('/logout',
+  function (req, res) {
+    req.logout();
+    res.status(200).json({ success: true, msg: 'Logout success' });
+  });
+
+// router.get('/posts', listPost)
+// router.get('/post/:id', detailPost)
+// router.post('/post/new', userController.checkAuthenticated, createPost)
+// router.put('/post/:id/edit', userController.checkAuthenticated, editPost)
+// router.delete('/post/:id', userController.checkAuthenticated, deletePost)
 
 export default router;
