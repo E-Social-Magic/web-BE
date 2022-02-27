@@ -1,4 +1,5 @@
-import { Router } from "express";
-const router = Router({ mergeParams: true });
+import express from 'express';
+const router = express.Router();
+
 
 export default router;
