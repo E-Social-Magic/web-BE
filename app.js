@@ -8,6 +8,7 @@ import cors from 'cors';
 import HTTPStatus from 'http-status'
 import express_session from "express-session";
 import router from './routes/index.route.js';
+import api from './routes/api.js';
 import passport from './config/passport.js';
 const __dirname = path.resolve();
 
@@ -28,8 +29,12 @@ app.use(passport.authenticate('session'));
 //   req.session.messages = [];
 //   next();
 // });
-
-app.use('/', router);
+app.get('/', function(req, res) {
+    res.send('Page under construction.');
+  });
+  
+app.use('/api', api);
+// app.use('/', router);
 
 // app.use(function (req, res, next) {
 //     return res.status(HTTPStatus.NOT_FOUND).send()  });

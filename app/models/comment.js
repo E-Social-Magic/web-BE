@@ -3,9 +3,9 @@ import mongoose from 'mongoose';
 const schema = new mongoose.Schema(
   {
     content: { type: String, required: true },
-    post_id: { type: Int32Array, required: true },
-    user_id: { type: Int32Array, required: true },
-    visible: { type: Int32Array, required: true }
+    post_id: { type: Number, required: true },
+    user_id: { type: Number, required: true },
+    visible: { type: Number, required: true }
   },
   { timestamps: true }
 );

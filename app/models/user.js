@@ -8,7 +8,7 @@ const schema = new mongoose.Schema(
     googleID: { type: String, required: false },
     facebookID: { type: String, required: false },
     githubID: { type: String, required: false },
-    role: { type: String, required: true }
+    role: { type: String, required: true, enum: ['admin', 'user']}
   },
   { timestamps: true }
 );

@@ -4,8 +4,8 @@ const schema = new mongoose.Schema(
   {
     title: { type: String, required: true, maxLength: 100 },
     content: { type: String, required: true },
-    user_id: { type: Int32Array, required: true },
-    visible: { type: Int32Array, required: true },
+    user_id: { type: Number, required: true },
+    visible: { type: Number, required: true },
   },
   { timestamps: true }
 );

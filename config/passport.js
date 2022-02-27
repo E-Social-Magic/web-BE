@@ -2,27 +2,18 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as FaceBookStrategy } from 'passport-facebook';
+import bcrypt from 'bcrypt';
+import db from '../app/models/index.model.js';
+const { User } = db;
 
-passport.serializeUser(function (user, done) {
-    if (user.googleID) {
-        done(null, user)
-    }
-    else {
-        done(null, user.id);
-    }
+passport.serializeUser((user, done) => {
+    done(null, user.id);
 });
 
-passport.deserializeUser(function (id, done) {
-    if (id.id) {
-        done(null, {
-            username: id.displayName,
-        })
-    }
-    else {
-        User.findById(id, function (err, user) {
-            done(err, user);
-        });
-    }
+passport.deserializeUser((id, done) => {
+    User.findById(id).then((user) => {
+        done(null, user);
+    });
 });
 
 passport.use(new LocalStrategy(
@@ -31,7 +22,8 @@ passport.use(new LocalStrategy(
             username: username
         }).then(function (user) {
             if (user == null) {
-                return done(null, false, { message: 'The username does not exist' })
+                return done(null, false, { message: 'The username does not exist' });
+                // res.json({message: 'The username does not exist'})
             }
             else {
                 bcrypt.compare(password, user.password, function (err, result) {
@@ -67,13 +59,13 @@ passport.use(new GoogleStrategy({
                         role: "user"
                     });
                 newUser.save();
-                return done(null, newUser)
+                return done(null, newUser);
             }
             if (checkEmailExist["password"]) {
                 // neu tai khoai nay duoc tao bang form
                 return done(null, false, { message: 'Tài khoản này đã được đăng ký. Vui lòng login bằng email và password' })
             }
-            return done(null, checkEmailExist)
+            return done(null, checkEmailExist);
         } catch (error) {
             console.log(error);
         }

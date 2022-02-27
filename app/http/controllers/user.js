@@ -1,54 +1,42 @@
 import db from '../../models/index.model.js';
-const {User} = db;
+const { User } = db;
 import sendMail from '../../../config/sendMail.js';
 import bcrypt from 'bcrypt';
-import { check, body, validationResult } from 'express-validator';
+import validator from 'express-validator';
+const { body, check, validationResult } = validator;
 import storage from 'node-persist';
 var code;
 
-export function checkAuthenticated (req, res, next){
+export function checkAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         return next()
     }
-    res.redirect('/login')
+    res.status(401).send({ success: false, msg: 'Authentication failed.' });
 }
 
-export function checkNotAuthenticated (req, res, next){
+export function checkNotAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
-        return res.redirect('/')
+        return res.json({ success: true })
     }
     next()
 }
 
-export function homepage (req, res){
+export function homepage(req, res) {
     storage.setItem('role', req.user.role)
     return res.json({ title: 'Homepage', username: req.user.username, role: req.user.role });
 };
 
-export function login (req, res) {
+export function login(req, res) {
     return res.json({ title: 'Login to Account' })
 };
 
-export const signup = [
+export const userValidator = [
     body('username')
-        .trim().isLength({ min: 1 }).escape().withMessage('Username must not be empty.')
-        .isAlphanumeric().withMessage('Username has non-alphanumeric characters.'),
+        .not().isEmpty().withMessage('Username is required.')
+        .isLength({ min: 5 }).withMessage('Username must not be empty.'),
     body('email')
         .trim().isLength({ min: 1 }).escape().withMessage('Email must not be empty.')
-        .withMessage('Email has non-alphanumeric characters.'),
-    // check('email')
-    //     .isEmail()
-    //     .withMessage('Invalid Email')
-    //     .custom((value, { req }) => {
-    //         return new Promise((resolve, reject) => {
-    //             User.findOne({ email: req.body.email }, function (err, user) {
-    //                 if (Boolean(user)) {
-    //                     reject(new Error('E-mail already in use'))
-    //                 }
-    //                 resolve(true)
-    //             });
-    //         });
-    //     }),
+        .isEmail().withMessage('Invalid email'),
     body('password')
         .notEmpty().withMessage('Password must not be empty')
         .isLength({ min: 6 }).withMessage('Password must be at least 6 chars'),
@@ -59,35 +47,36 @@ export const signup = [
 
         if (!errors.isEmpty()) {
             // console.log(errors);
-            res.json({ title: 'Create Account', account: req.body, errors: errors.array() });
+            res.status(400).json({ errors: errors.array() });
             return;
         }
-        else {
-            User.findOne({
-                $or: [{ email: req.body.email }, { username: req.body.username }]
-            })
-                .then(result => {
-                    if (result) {
-                        res.json({ title: 'Create Account', err: 'The username or email does exist' })
-                    }
-                    else {
-                        code = Math.floor(Math.random() * (999999 - 100000)) + 100000;
-                        var subject = "Email for verify"
-                        var view = "<h2>Hello</h2><p>This is code for verify your account: " + code + " </p>";
-                        // mailer.sendMail(req.body.email, subject, view);
-                        console.log(code);
-                        res.json({ title: 'Verify Account', account: req.body, err: undefined })
-                    }
-                })
-                .catch(err => {
-                    console.log(err);
-                })
-
-        }
+        next();
     }
 ]
 
-export function createAccount (req, res, next) {
+export function signup(req, res, next) {
+    User.findOne({
+        $or: [{ email: req.body.email }, { username: req.body.username }]
+    })
+        .then(result => {
+            if (result) {
+                res.json({ success: false, msg: 'Username already exists.' });
+            }
+            else {
+                code = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+                var subject = "Email for verify"
+                var view = "<h2>Hello</h2><p>This is code for verify your account: " + code + " </p>";
+                // mailer.sendMail(req.body.email, subject, view);
+                console.log(code);
+                res.json({ account: req.body, err: undefined })
+            }
+        })
+        .catch(err => {
+            console.log(err);
+        })
+}
+
+export function createAccount(req, res, next) {
     if (req.body.code == code) {
         bcrypt.hash(req.body.password, 10, function (err, hash) {
             var user = new User(
@@ -104,7 +93,7 @@ export function createAccount (req, res, next) {
                 var subject = "Notice of successful registrationThanks "
                 var view = "<h2>Welcome</h2><p>You have successfully registered</p>";
                 // mailer.sendMail(req.body.email, subject, view);
-                res.redirect("/login");
+                res.json({ success: true, msg: 'Successful created new user.' });
             });
         })
     }
@@ -146,7 +135,7 @@ export const sendmailFogot = [
     }
 ];
 
-export function updatePassword (req, res, next) {
+export function updatePassword(req, res, next) {
     if (req.body.code == code && req.body.confirm == req.body.password) {
         bcrypt.hash(req.body.password, 10, function (err, hash) {
             User.findByIdAndUpdate(req.body.id, { $set: { password: hash } }, {}, function (err) {

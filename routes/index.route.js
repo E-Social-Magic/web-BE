@@ -12,7 +12,7 @@ router.get('/login', [userController.checkNotAuthenticated, userController.login
 router.post('/login',
   passport.authenticate('local', { failureRedirect: '/login', failureMessage: true }),
   function (req, res) {
-    res.redirect('/');
+    res.status(401).send({success: false, msg: 'Authentication failed. User not found.'});
   });
 
 //router login gg
@@ -62,5 +62,11 @@ router.get('/logout',
     req.logout();
     res.redirect('/login');
   });
+
+// router.get('/posts', listPost)
+// router.get('/post/:id', detailPost)
+// router.post('/post/new', userController.checkAuthenticated, createPost)
+// router.put('/post/:id/edit', userController.checkAuthenticated, editPost)
+// router.delete('/post/:id', userController.checkAuthenticated, deletePost)
 
 export default router;

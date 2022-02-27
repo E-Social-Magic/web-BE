@@ -5,7 +5,7 @@ const schema = new mongoose.Schema(
         name: { type: String, required: true, maxLength: 100 },
         subject: { type: String, required: true},
         private_dt: { type: Object, required: true},
-        visible: {type: Int16Array, required}
+        visible: {type: Number, required:true}
     },
     { timestamps: true }
 );
