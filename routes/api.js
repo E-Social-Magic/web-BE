@@ -7,16 +7,24 @@ router.get('/signup',
   function (req, res, next) {
     res.json({ title: "Create Account", err: undefined });
   });
-router.post('/signup', userController.userValidator, userController.signup );
+router.post('/signup', userController.userValidator, userController.signup);
 
 router.get('/', [userController.checkAuthenticated, userController.homepage]);
 
 router.get('/login', [userController.checkNotAuthenticated, userController.login]);
 
 router.post('/login',
+  passport.authenticate('json-custom', { failWithError: true }),
   function (req, res) {
-    console.log(req.user);
-    res.json({success: true, msg: 'Login success'});
-  });
+    res.status(200).json({ success: true, msg: 'Login success' });
+  },
+  function(err, req, res, next) {
+    console.log(req.message);
+    res.status(400).json({
+      success: req.isAuthenticated(),
+      err: err.message
+    });
+  },
+  );
 
 export default router;

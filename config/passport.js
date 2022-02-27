@@ -1,5 +1,5 @@
 import passport from 'passport';
-import { Strategy as LocalStrategy } from 'passport-local';
+import { Strategy as JsonCustomStrategy } from 'passport-json-custom';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as FaceBookStrategy } from 'passport-facebook';
 import bcrypt from 'bcrypt';
@@ -16,29 +16,21 @@ passport.deserializeUser((id, done) => {
     });
 });
 
-passport.use(new LocalStrategy(
-    function (username, password, done) {
-        User.findOne({
-            username: username
-        }).then(function (user) {
-            if (user == null) {
-                return done(null, false, { message: 'The username does not exist' });
-                // res.json({message: 'The username does not exist'})
-            }
-            else {
-                bcrypt.compare(password, user.password, function (err, result) {
-                    if (err) {
-                        return done(err);
-                    }
-                    if (!result) {
-                        return done(null, false, { message: 'Incorrect password' });
-                    }
-                    return done(null, user);
-                })
-            }
-        }).catch(function (err) {
-            return done(err);
-        })
+passport.use(new JsonCustomStrategy(
+    function (credentials, done) {
+        User.findOne({ username: credentials.username }, function (err, user) {
+            if (err) { return done(err); }
+            if (!user) { return done({ message: 'User not found' }, false ); }
+            bcrypt.compare(credentials.password, user.password, function (err, result) {
+                if (err) {
+                    return done(err);
+                }
+                if (!result) {
+                    return done({ message: 'Incorrect password' }, false );
+                }
+                return done(null, user);
+            })
+        });
     }
 ));
 
@@ -63,7 +55,7 @@ passport.use(new GoogleStrategy({
             }
             if (checkEmailExist["password"]) {
                 // neu tai khoai nay duoc tao bang form
-                return done(null, false, { message: 'Tài khoản này đã được đăng ký. Vui lòng login bằng email và password' })
+                return done({ message: 'Tài khoản này đã được đăng ký. Vui lòng login bằng email và password' }, false)
             }
             return done(null, checkEmailExist);
         } catch (error) {
