@@ -4,6 +4,8 @@ import passport from '../config/passport.js';
 import * as userController from '../app/http/controllers/user.js';
 import * as postController from '../app/http/controllers/post.js';
 import * as commentController from '../app/http/controllers/comment.js';
+import * as subjectController from '../app/http/controllers/subject.js';
+import * as groupController from '../app/http/controllers/group.js';
 
 router.get('/signup',
   function (req, res, next) {
@@ -82,5 +84,17 @@ router.get('/comment/:id', commentController.detailComment);
 router.post('/comment/new', userController.checkAuthenticated, commentController.createComment);
 router.put('/comment/:id/edit', userController.checkAuthenticated, commentController.editComment);
 router.delete('/comment/:id', userController.checkAuthenticated, commentController.deleteComment);
+
+router.get('/subjects', subjectController.listSubject);
+router.get('/subject/:id', subjectController.detailSubject);
+router.post('/subject/new', userController.checkAuthenticated, subjectController.createSubject);
+router.put('/subject/:id/edit', userController.checkAuthenticated, subjectController.editSubject);
+router.delete('/subject/:id', userController.checkAuthenticated, subjectController.deleteSubject);
+
+router.get('/groups', groupController.listGroup);
+router.get('/group/:id', groupController.detailGroup);
+router.post('/group/new', groupController.createGroup);
+router.put('/group/:id/edit', groupController.editGroup);
+router.delete('/group/:id', groupController.deleteGroup);
 
 export default router;

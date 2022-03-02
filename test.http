@@ -2,14 +2,12 @@ GET http://localhost:3001/login HTTP/1.1
 Access-Control-Allow-Origin:*
 Access-Control-Allow-Headers:Origin, X-Requested-With, Content-Type, Accept
 ###
-POST http://localhost:3001/api/signup HTTP/1.1
+POST http://localhost:3001/api/login HTTP/1.1
 content-type: application/json
 
 {
     "username": "Admin",
-    "email": "huan@gmail.com",
-    "password": "huan111",
-    "confirm_password": "huan111"
+    "password": "huan111"
 }
 
 ###
