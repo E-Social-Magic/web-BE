@@ -15,4 +15,4 @@ schema.method('toJSON', function () {
   return object;
 });
 
-export default mongoose.model('users', schema);
+export default mongoose.model('private_data', schema);

@@ -4,6 +4,9 @@ import passport from '../config/passport.js';
 import * as userController from '../app/http/controllers/user.js';
 import * as postController from '../app/http/controllers/post.js';
 import * as commentController from '../app/http/controllers/comment.js';
+import * as subjectController from '../app/http/controllers/subject.js';
+import * as groupController from '../app/http/controllers/group.js';
+import * as privateDataController from '../app/http/controllers/private_data.js';
 
 router.get('/signup',
   function (req, res, next) {
@@ -82,5 +85,23 @@ router.get('/comment/:id', commentController.detailComment);
 router.post('/comment/new', userController.checkAuthenticated, commentController.createComment);
 router.put('/comment/:id/edit', userController.checkAuthenticated, commentController.editComment);
 router.delete('/comment/:id', userController.checkAuthenticated, commentController.deleteComment);
+
+router.get('/subjects', subjectController.listSubject);
+router.get('/subject/:id', subjectController.detailSubject);
+router.post('/subject/new', userController.checkAuthenticated, subjectController.createSubject);
+router.put('/subject/:id/edit', userController.checkAuthenticated, subjectController.editSubject);
+router.delete('/subject/:id', userController.checkAuthenticated, subjectController.deleteSubject);
+
+router.get('/groups', groupController.listGroup);
+router.get('/group/:id', groupController.detailGroup);
+router.post('/group/new', userController.checkAuthenticated, groupController.createGroup);
+router.put('/group/:id/edit', userController.checkAuthenticated, groupController.editGroup);
+router.delete('/group/:id', userController.checkAuthenticated, groupController.deleteGroup);
+
+router.get('/private_datas', privateDataController.listPrivateData);
+router.get('/private_data/:id', privateDataController.deletePrivateData);
+router.post('/private_data/new', userController.checkAuthenticated, privateDataController.createPrivateData);
+router.put('/private_data/:id/edit', userController.checkAuthenticated, privateDataController.editPrivateData);
+router.delete('/private_data/:id', userController.checkAuthenticated, privateDataController.deletePrivateData);
 
 export default router;

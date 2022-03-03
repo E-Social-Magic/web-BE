@@ -3,9 +3,6 @@ import mongoose from 'mongoose';
 const schema = new mongoose.Schema(
     {
         name: { type: String, required: true, maxLength: 100 },
-        subject: {type: String, required: true },
-        private_dt: { type: Object, required: true},
-        visible: { type: Number, default: 0, required: false }
     },
     { timestamps: true }
 );
@@ -16,4 +13,4 @@ schema.method('toJSON', function () {
     return object;
 });
 
-export default mongoose.model('group', schema);
+export default mongoose.model('subject', schema);

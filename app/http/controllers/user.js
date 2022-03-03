@@ -11,7 +11,7 @@ export function checkAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         return next()
     }
-    res.status(401).send({ success: false, message: 'Authentication failed.' });
+    return res.status(401).send({ success: false, message: 'Authentication failed.' });
 }
 
 export function checkNotAuthenticated(req, res, next) {
@@ -24,7 +24,7 @@ export function checkNotAuthenticated(req, res, next) {
 export function getAllUser(req, res) {
     User.find({}, col, (err, users) => {
         if (err) { return res.json({ err }) }
-        res.json({ users: users })
+        return res.json({ users: users })
     })
 }
 
@@ -32,7 +32,7 @@ export function info(req, res) {
     // storage.setItem('role', req.user.role)
     const {password,...user} = req.user._doc;
     
-    return res.json({ user: user, role: req.user.role });
+    return res.json(user);
 };
 
 export function login(req, res) {
@@ -42,7 +42,7 @@ export function login(req, res) {
 export const userValidator = [
     body('username')
         .not().isEmpty().withMessage('Username is required.')
-        .isLength({ min: 5 }).withMessage('Username must not be empty.'),
+        .isLength({ min: 5 }).withMessage('Username must not be empty and must be at least 5 chars.'),
     body('email')
         .trim().isLength({ min: 1 }).escape().withMessage('Email must not be empty.')
         .isEmail().withMessage('Invalid email'),
@@ -56,8 +56,7 @@ export const userValidator = [
 
         if (!errors.isEmpty()) {
             // console.log(errors);
-            res.status(400).json({ errors: errors.array() });
-            return;
+            return res.status(400).json({ errors: errors.array() });
         }
         next();
     }
@@ -69,15 +68,15 @@ export function signup(req, res, next) {
     })
         .then(result => {
             if (result) {
-                res.json({ success: false, message: 'Username already exists.' });
+                return res.json({ success: false, message: 'Username already exists.' });
             }
             else {
                 code = Math.floor(Math.random() * (999999 - 100000)) + 100000;
                 var subject = "Email for verify"
                 var view = "<h2>Hello</h2><p>This is code for verify your account: " + code + " </p>";
-                // mailer.sendMail(req.body.email, subject, view);
+                sendMail(req.body.email, subject, view);
                 console.log(code);
-                res.status(200).json( req.body )
+                return res.status(200).json( req.body )
             }
         })
         .catch(err => {
@@ -101,13 +100,13 @@ export function createAccount(req, res, next) {
                 }
                 var subject = "Notice of successful registrationThanks "
                 var view = "<h2>Welcome</h2><p>You have successfully registered</p>";
-                // mailer.sendMail(req.body.email, subject, view);
-                res.json({ success: true, message: 'Successful created new user.' });
+                sendMail(req.body.email, subject, view);
+                return res.json({ success: true, message: 'Successful created new user.' });
             });
         })
     }
     else {
-        res.json({ account: req.body, err: 'Incorrect code' })
+        return res.json({ account: req.body, err: 'Incorrect code' })
     }
 }
 
@@ -118,8 +117,7 @@ export const sendmailFogot = [
         const errors = validationResult(req);
 
         if (!errors.isEmpty()) {
-            res.json({ account: req.body, errors: errors.array() });
-            return;
+            return res.json({ account: req.body, errors: errors.array() });
         }
         else {
 
@@ -131,11 +129,11 @@ export const sendmailFogot = [
                         code = Math.floor(Math.random() * (999999 - 100000)) + 100000;
                         var subject = "Email forgot password"
                         var view = "<h2>Hello</h2><p>This is code for reset password: " + code + " </p>";
-                        // mailer.sendMail(req.body.email, subject, view);
-                        res.json({ account: result, err: undefined })
+                        sendMail(req.body.email, subject, view);
+                        return res.json({ account: result })
                     }
                     else {
-                        res.json({ err: 'The email does not exist' })
+                        return res.json({ err: 'The email does not exist' })
                     }
                 }
                 )
@@ -149,12 +147,12 @@ export function updatePassword(req, res, next) {
         bcrypt.hash(req.body.password, 10, function (err, hash) {
             User.findByIdAndUpdate(req.body.id, { $set: { password: hash } }, {}, function (err) {
                 if (err) { return next(err); }
-                res.redirect("/login");
+                return res.json({success: "Changed password"});
             });
         })
     }
     else {
-        res.json({ account: req.body, err: 'Incorrect code or password' })
+        return res.json({ account: req.body, err: 'Incorrect code or password' })
     }
 };
 

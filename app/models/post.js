@@ -4,9 +4,9 @@ const schema = new mongoose.Schema(
   {
     title: { type: String, required: true, maxLength: 100 },
     content: { type: String, required: true },
-    img: { type: String, required: true },
-    user_id: { type: Number, required: true },
-    visible: { type: Number, required: true },
+    img: { type: String, required: false },
+    user_id: { type: String, required: true },
+    visible: { type: Number, default: 0, required: false },
   },
   { timestamps: true }
 );

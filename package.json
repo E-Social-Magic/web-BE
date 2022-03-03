@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node ./bin/www.js",
     "devstart": "nodemon ./bin/www",
-    "serverstart": "DEBUG=express-locallibrary-tutorial:* npm run devstart"
+    "serverstart": "npm run devstart"
   },
   "dependencies": {
     "async": "^3.2.3",
@@ -28,7 +28,6 @@
     "morgan": "~1.9.1",
     "node-persist": "^3.1.0",
     "nodemailer": "^6.7.2",
-    "nodemon": "^2.0.15",
     "passport": "^0.5.2",
     "passport-facebook": "^3.0.0",
     "passport-google-oauth20": "^2.0.0",
@@ -38,5 +37,8 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/longnguyen-2k/to-dos-app.git"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
   }
 }
