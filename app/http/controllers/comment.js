@@ -26,7 +26,7 @@ export const createComment = [
     (req, res) => {
         const errors = validationResult(req);
         const comment = new Comment(req.body)
-
+        
         if (!errors.isEmpty()) {
             return res.json({ comment: req.body, errors: errors.array() });
         }

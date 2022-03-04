@@ -4,7 +4,7 @@ const schema = new mongoose.Schema(
   {
     title: { type: String, required: true, maxLength: 100 },
     content: { type: String, required: true },
-    img: { type: String, required: false },
+    img: { type: Array, required: false },
     user_id: { type: String, required: true },
     visible: { type: Number, default: 0, required: false },
   },

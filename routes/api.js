@@ -8,6 +8,7 @@ import * as subjectController from '../app/http/controllers/subject.js';
 import * as groupController from '../app/http/controllers/group.js';
 import * as privateDataController from '../app/http/controllers/private_data.js';
 
+
 router.get('/signup',
   function (req, res, next) {
     res.json({ title: "Create Account", err: undefined });
@@ -77,6 +78,7 @@ router.get('/logout',
 router.get('/posts', postController.listPost);
 router.get('/post/:id', postController.detailPost);
 router.post('/post/new', userController.checkAuthenticated, postController.createPost);
+router.post('/post/newAnonymously', userController.checkAuthenticated, postController.createPostAnonymously);
 router.put('/post/:id/edit', userController.checkAuthenticated, postController.editPost);
 router.delete('/post/:id', userController.checkAuthenticated, postController.deletePost);
 
