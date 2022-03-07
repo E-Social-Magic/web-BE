@@ -4,7 +4,7 @@ import sendMail from '../../../config/sendMail.js';
 import bcrypt from 'bcrypt';
 import validator from 'express-validator';
 const { body, check, validationResult } = validator;
-import storage from 'node-persist';
+import _ from 'lodash';
 var code;
 
 export function checkAuthenticated(req, res, next) {
@@ -75,7 +75,6 @@ export function signup(req, res, next) {
                 var subject = "Email for verify"
                 var view = "<h2>Hello</h2><p>This is code for verify your account: " + code + " </p>";
                 sendMail(req.body.email, subject, view);
-                console.log(code);
                 return res.status(200).json( req.body )
             }
         })
@@ -130,7 +129,7 @@ export const sendmailFogot = [
                         var subject = "Email forgot password"
                         var view = "<h2>Hello</h2><p>This is code for reset password: " + code + " </p>";
                         sendMail(req.body.email, subject, view);
-                        return res.json({ account: result })
+                        return res.json({email: result.email, message: "Check code in your email"})
                     }
                     else {
                         return res.json({ err: 'The email does not exist' })
@@ -145,14 +144,15 @@ export const sendmailFogot = [
 export function updatePassword(req, res, next) {
     if (req.body.code == code && req.body.confirm == req.body.password) {
         bcrypt.hash(req.body.password, 10, function (err, hash) {
-            User.findByIdAndUpdate(req.body.id, { $set: { password: hash } }, {}, function (err) {
+            User.findOneAndUpdate( {email: req.body.email}, { $set: { password: hash } }, function (err) {
                 if (err) { return next(err); }
-                return res.json({success: "Changed password"});
+                return res.json({success: true, message: "Changed password"});
+
             });
         })
     }
     else {
-        return res.json({ account: req.body, err: 'Incorrect code or password' })
+        return res.json({ err: 'Incorrect code or password' })
     }
 };
 

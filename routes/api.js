@@ -65,8 +65,7 @@ router.get('/sendmail_forget',
   });
 
 router.post('/sendmail_forget', userController.sendmailFogot);
-
-router.post('/new_password', userController.updatePassword);
+router.post('/sendmail_forget/confirm', userController.updatePassword);
 
 //router logout
 router.get('/logout',
@@ -82,11 +81,10 @@ router.post('/post/newAnonymously', userController.checkAuthenticated, postContr
 router.put('/post/:id/edit', userController.checkAuthenticated, postController.editPost);
 router.delete('/post/:id', userController.checkAuthenticated, postController.deletePost);
 
-router.get('/comments', commentController.listComment);
-router.get('/comment/:id', commentController.detailComment);
-router.post('/comment/new', userController.checkAuthenticated, commentController.createComment);
-router.put('/comment/:id/edit', userController.checkAuthenticated, commentController.editComment);
-router.delete('/comment/:id', userController.checkAuthenticated, commentController.deleteComment);
+
+router.put('/post/:id/comment', userController.checkAuthenticated, commentController.createComment);
+router.put('/post/:id/comment/:commentId/edit', userController.checkAuthenticated, commentController.editComment);
+router.delete('/post/:id/comment/:commentId', userController.checkAuthenticated, commentController.deleteComment);
 
 router.get('/subjects', subjectController.listSubject);
 router.get('/subject/:id', subjectController.detailSubject);

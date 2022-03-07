@@ -1,6 +1,6 @@
 import db from '../../models/index.model.js';
 const { Post, User } = db;
-import { body, validationResult } from 'express-validator';
+// import { body, validationResult } from 'express-validator';
 import multer from 'multer';
 import { storage } from '../../../config/multer.js';
 const upload = multer({ storage: storage });
@@ -22,6 +22,7 @@ export function detailPost(req, res) {
                     title: post.title,
                     content: post.content,
                     username: "anonymously",
+                    comments: post.comments,
                     img: post.img
                 });
             }
@@ -30,6 +31,7 @@ export function detailPost(req, res) {
                     title: post.title,
                     content: post.content,
                     username: user.username,
+                    comments: post.comments,
                     img: post.img
                 });
             }
@@ -85,7 +87,7 @@ export async function editPost(req, res) {
             { returnOriginal: false }
         );
         if (post)
-            return res.json({ post, message: 'post was updated successfully.' });
+            return res.json({ post, message: 'Post was updated successfully.' });
         return res.status(403).json({
             message: `Cannot update post with id=${req.params.id}. Maybe post was not found or No permission!`,
         });

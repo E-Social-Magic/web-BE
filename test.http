@@ -6,8 +6,15 @@ POST http://localhost:3001/api/login HTTP/1.1
 content-type: application/json
 
 {
+<<<<<<< Updated upstream
+    "username": "huannguyen",
+    "password": "huan123"
+=======
     "username": "Admin",
     "password": "huan111"
+>>>>>>> Stashed changes
 }
 
 ###
+DELETE http://localhost:3001/api/post/6224cc99ebf05ac7203b9b70/comment/62250054cd36653679a34c13 HTTP/1.1
+content-type: application/json
