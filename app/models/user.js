@@ -7,6 +7,8 @@ const schema = new mongoose.Schema(
     password: { type: String, required: false, minLength: 6 },
     googleID: { type: String, required: false },
     facebookID: { type: String, required: false },
+    subjects: {type: Array, required: false},
+    visible: { type: Number, default: 0, required: false },
     role: { type: String, required: true, enum: ['admin', 'user']}
   },
   { timestamps: true }

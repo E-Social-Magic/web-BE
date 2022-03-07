@@ -22,16 +22,14 @@ export function checkNotAuthenticated(req, res, next) {
 }
 
 export function getAllUser(req, res) {
-    User.find({}, col, (err, users) => {
+    User.find({}, (err, users) => {
         if (err) { return res.json({ err }) }
         return res.json({ users: users })
     })
 }
 
 export function info(req, res) {
-    // storage.setItem('role', req.user.role)
     const {password,...user} = req.user._doc;
-    
     return res.json(user);
 };
 
@@ -128,8 +126,13 @@ export const sendmailFogot = [
                         code = Math.floor(Math.random() * (999999 - 100000)) + 100000;
                         var subject = "Email forgot password"
                         var view = "<h2>Hello</h2><p>This is code for reset password: " + code + " </p>";
+<<<<<<< HEAD
                         sendMail(req.body.email, subject, view);
                         return res.json({email: result.email, message: "Check code in your email"})
+=======
+                        // sendMail(req.body.email, subject, view);
+                        return res.json(result.email, {message: "Check code in your email"})
+>>>>>>> 5844ae0 (Done subject)
                     }
                     else {
                         return res.json({ err: 'The email does not exist' })

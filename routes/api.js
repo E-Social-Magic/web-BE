@@ -86,11 +86,9 @@ router.put('/post/:id/comment', userController.checkAuthenticated, commentContro
 router.put('/post/:id/comment/:commentId/edit', userController.checkAuthenticated, commentController.editComment);
 router.delete('/post/:id/comment/:commentId', userController.checkAuthenticated, commentController.deleteComment);
 
-router.get('/subjects', subjectController.listSubject);
-router.get('/subject/:id', subjectController.detailSubject);
-router.post('/subject/new', userController.checkAuthenticated, subjectController.createSubject);
-router.put('/subject/:id/edit', userController.checkAuthenticated, subjectController.editSubject);
-router.delete('/subject/:id', userController.checkAuthenticated, subjectController.deleteSubject);
+router.put('/user/:id/subject/new', userController.checkAuthenticated, subjectController.createSubject);
+router.put('/user/:id/subject/:subjectId/edit', userController.checkAuthenticated, subjectController.editSubject);
+router.delete('/user/:id/subject/:subjectId', userController.checkAuthenticated, subjectController.deleteSubject);
 
 router.get('/groups', groupController.listGroup);
 router.get('/group/:id', groupController.detailGroup);

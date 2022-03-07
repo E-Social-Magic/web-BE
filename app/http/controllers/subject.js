@@ -1,56 +1,81 @@
 import db from '../../models/index.model.js';
-const { Subject } = db;
-import { body, validationResult } from 'express-validator';
-
-export function listSubject(req, res) {
-    const col = 'title content user_id visible updated'
-    Subject.find({}, col, (err, subjects) => {
-        if (err) { return res.json({ err }) }
-        return res.json({ subjects: subjects })
-    })
-}
-
-export function detailSubject(req, res) {
-    Subject.findById(req.params.id).exec(function (err, subject) {
-        if (err) { return res.json({ err }) }
-        return res.json({
-            name: subject.name
-        })
-    })
-}
+const { User } = db;
+import mongoose from 'mongoose';
+var Schema = mongoose.Schema;
+var ObjectIdSchema = Schema.ObjectId;
+var ObjectId = mongoose.Types.ObjectId;
+import _ from 'lodash';
 
 export const createSubject = [
-    body('name', 'Name subject must not be empty.').trim().isLength({ min: 1 }).escape(),
-    (req, res) => {
-        const errors = validationResult(req);
-        const subject = new Subject(req.body)
-        if (!errors.isEmpty()) {
-            return res.json({ subject: req.body, errors: errors.array() });
-        }
-        else {
-            subject.save().then(result => {
-                return res.json({ subject: result })
-            })
+    async (req, res) => {
+        try {
+            const user = await User.findOneAndUpdate(
+                { _id: req.params.id },
+                {
+                    $push: {
+                        subjects: {
+                            _id: new ObjectId(),
+                            subject: req.body.subject,
+                        }
+                    }
+                },
+                { returnOriginal: false }
+            );
+
+            if (user)
+                return res.json({ subjects: user.subjects, message: 'Add subject successfully.' });
+            return res.status(403).json({
+                message: `Cannot add subject at user_id=${req.params.id}. Maybe user was not found or No permission!`,
+            });
+        } catch (error) {
+            return res.status(500).json({
+                message: `Error: ${error}`,
+            });
         }
     }
 ]
 
-export const editSubject = [
-    body('name', 'Name subject must not be empty.').trim().isLength({ min: 1 }).escape(),
-    (req, res) => {
-        Subject.findById(req.params.id, (err, subject) => {
-            if (err) { return res.json({ err }) }
-            subject.name = req.body.name
-            subject.save().then(result => {
-                return res.json({ subject: result })
-            })
-        })
+export async function editSubject(req, res) {
+    try {
+        const subjectID = new ObjectId(req.params.subjectId);
+        const user = await User.findOneAndUpdate(
+            { _id: req.params.id, "subjects._id": subjectID },
+            {
+                $set: {
+                    "subjects.$.subject": req.body.subject,
+                }
+            },
+            { passRawResult: true, returnOriginal: false }
+        );
+        if (_.find(user.subjects, { _id: subjectID, subject: req.body.subject }))
+            return res.json({ subjects: user.subjects, message: 'Subject successfully.' });
+        return res.status(403).json({
+            message: `Cannot edit subject at id=${subjectID}!`,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error: ${error}`,
+        });
     }
-]
+}
 
-export function deleteSubject(req, res) {
-    Subject.remove({ _id: req.params.id }, (err) => {
-        if (err) { return res.json({ err }) }
-        return res.json({ 'mess': 'Delete success' })
-    })
+export async function deleteSubject(req, res) {
+    try {
+        const subjectID = new ObjectId(req.params.subjectId);
+        const user = await User.findOneAndUpdate(
+            { _id: req.params.id, user_id: req.session.passport.user },
+            { $pull: { "subjects": { _id: subjectID } } },
+            { returnOriginal: false }
+        );
+        if (user)
+            return res.json({ subjects: user.subjects, message: 'Delete successfully.' });
+        return res.status(403).json({
+            message: `Cannot delete subject at id=${subjectID}`,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error: ${error}`,
+        });
+    }
+
 }
