@@ -77,16 +77,19 @@ router.get('/logout',
 
 router.get('/posts', postController.listPost);
 router.get('/post/:id', postController.detailPost);
+router.put('/post/:id/comment', userController.checkAuthenticated, commentController.createComment);
+router.put('/post/:id/comment/:commentId/edit', userController.checkAuthenticated, commentController.editComment);
+router.delete('/post/:id/comment/:commentId', userController.checkAuthenticated, commentController.deleteComment);
 router.post('/post/new', userController.checkAuthenticated, postController.createPost);
 router.post('/post/newAnonymously', userController.checkAuthenticated, postController.createPostAnonymously);
 router.put('/post/:id/edit', userController.checkAuthenticated, postController.editPost);
 router.delete('/post/:id', userController.checkAuthenticated, postController.deletePost);
 
-router.get('/comments', commentController.listComment);
-router.get('/comment/:id', commentController.detailComment);
-router.post('/comment/new', userController.checkAuthenticated, commentController.createComment);
-router.put('/comment/:id/edit', userController.checkAuthenticated, commentController.editComment);
-router.delete('/comment/:id', userController.checkAuthenticated, commentController.deleteComment);
+// router.get('/comments', commentController.checkPostExist, commentController.listComment);
+// router.get('/comment/:id', commentController.detailComment);
+// router.post('/comment/new', userController.checkAuthenticated, commentController.createComment);
+// router.put('/comment/:id/edit', userController.checkAuthenticated, commentController.editComment);
+// router.delete('/comment/:id', userController.checkAuthenticated, commentController.deleteComment);
 
 router.get('/subjects', subjectController.listSubject);
 router.get('/subject/:id', subjectController.detailSubject);

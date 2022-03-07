@@ -7,6 +7,7 @@ const schema = new mongoose.Schema(
     img: { type: Array, required: false },
     user_id: { type: String, required: true },
     visible: { type: Number, default: 0, required: false },
+    comments: {type: Array, default: [], required: false}
   },
   { timestamps: true }
 );

@@ -1,60 +1,80 @@
 import db from '../../models/index.model.js';
-const { Comment } = db;
-import { check, body, validationResult } from 'express-validator';
+const { Post, User } = db;
+import mongoose from 'mongoose';
+var Schema = mongoose.Schema;
+var ObjectIdSchema = Schema.ObjectId;
+var ObjectId = mongoose.Types.ObjectId;
+import _ from 'lodash'
+export async function createComment(req, res) {
+    try {
+        const post = await Post.findOneAndUpdate(
+            { _id: req.params.id },
+            {
+                $push: {
+                    comments: {
+                        _id: new ObjectId(),
+                        comment: req.body.comment,
+                        user_id: req.session.passport.user
+                    }
+                }
+            },
+            { returnOriginal: false }
+        );
 
-export function listComment(req, res) {
-    Comment.find({}, (err, comments) => {
-        if (err) { return res.json({ err }) }
-        return res.json({ comments: comments })
-    })
+        if (post)
+            return res.json({ post, message: 'Comment successfully.' });
+        return res.status(403).json({
+            message: `Cannot Comment with id=${req.params.id}. Maybe post was not found or No permission!`,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error updating post with id= ${error}`,
+        });
+    }
 }
 
-export function detailComment(req, res) {
-    Comment.findById(req.params.id).populate('user_id').exec(function (err, comment) {
-        if (err) { return res.json({ err }) }
-        return res.json({
-            content: comment.content,
-            post_id: comment.post_id,
-            user_id: comment.user_id,
-            visible: comment.visible
-        })
-    })
+export async function editComment(req, res) {
+    try {
+        const commentID = new ObjectId(req.params.commentId);
+        const posts = await Post.findOneAndUpdate(
+            { _id: req.params.id, "comments.user_id": req.session.passport.user, "comments._id": commentID },
+            {
+                $set: {
+                    "comments.$.comment": req.body.comment
+                }
+            },
+            {passRawResult : true, returnOriginal: false }
+        );
+        console.log(posts.comments);
+        if (_.find(posts.comments,{_id:commentID,comment:req.body.comment}))
+            return res.json({ posts, message: 'Comment successfully.' });
+        return res.status(403).json({
+            message: `Cannot Comment with id=${req.params.id}. Maybe post was not found or No permission!`,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error updating post with id= ${error}`,
+        });
+    }
 }
 
-export const createComment = [
-    body('content', 'Title must not be empty.').trim().isLength({ min: 1 }).escape(),
-    (req, res) => {
-        const errors = validationResult(req);
-        const comment = new Comment(req.body)
-        
-        if (!errors.isEmpty()) {
-            return res.json({ comment: req.body, errors: errors.array() });
-        }
-        else {
-            // comment.user_id = req.session.user._id
-            comment.save().then(result => {
-                return res.json({ comment: result })
-            })
-        }
+export async function deleteComment(req, res) {
+    try {
+        const commentID = new ObjectId(req.params.commentId);
+        const post = await Post.findOneAndUpdate(
+            { _id: req.params.id, user_id: req.session.passport.user },
+            { $pull: { "comments": {_id: commentID}}},
+            { returnOriginal: false }
+        );
+        if (post)
+            return res.json({ post, message: 'Delete successfully.' });
+        return res.status(403).json({
+            message: `Cannot Comment with id=${commentID}. Maybe post was not found or No permission!`,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error: ${error}`,
+        });
     }
-]
-export const editComment = [
-    body('content', 'Title must not be empty.').trim().isLength({ min: 1 }).escape(),
-    (req, res) => {
-        Comment.findById(req.params.id, 'content post_id', (err, comment) => {
-            if (err) { return res.json({ err }) }
-            comment.content = req.body.content
-            comment.save().then(result => {
-                return res.json({ comment: result })
-            })
-        })
-    }
-]
 
-
-export function deleteComment(req, res) {
-    Comment.remove({ _id: req.params.id }, (err) => {
-        if (err) { return res.json({ err }) }
-        res.json({ 'mess': 'Delete success' })
-    })
 }
