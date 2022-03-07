@@ -4,34 +4,44 @@ import mongoose from 'mongoose';
 var Schema = mongoose.Schema;
 var ObjectIdSchema = Schema.ObjectId;
 var ObjectId = mongoose.Types.ObjectId;
-import _ from 'lodash'
-export async function createComment(req, res) {
-    try {
-        const post = await Post.findOneAndUpdate(
-            { _id: req.params.id },
-            {
-                $push: {
-                    comments: {
-                        _id: new ObjectId(),
-                        comment: req.body.comment,
-                        user_id: req.session.passport.user
-                    }
-                }
-            },
-            { returnOriginal: false }
-        );
+import _ from 'lodash';
+import multer from 'multer';
+import { storage } from '../../../config/multer.js';
+const upload = multer({ storage: storage });
 
-        if (post)
-            return res.json({ post, message: 'Comment successfully.' });
-        return res.status(403).json({
-            message: `Cannot Comment with id=${req.params.id}. Maybe post was not found or No permission!`,
-        });
-    } catch (error) {
-        return res.status(500).json({
-            message: `Error updating post with id= ${error}`,
-        });
+export const createComment = [
+    upload.array("files"),
+    async (req, res) => {
+        try {
+            const post = await Post.findOneAndUpdate(
+                { _id: req.params.id },
+                {
+                    $push: {
+                        comments: {
+                            _id: new ObjectId(),
+                            comment: req.body.comment,
+                            user_id: req.session.passport.user,
+                            images: req.files.map((file) => file.path)
+                        }
+                    }
+                },
+                { returnOriginal: false }
+            );
+    
+            if (post)
+                return res.json({ post, message: 'Comment successfully.' });
+            return res.status(403).json({
+                message: `Cannot Comment with id=${req.params.id}. Maybe post was not found or No permission!`,
+            });
+        } catch (error) {
+            return res.status(500).json({
+                message: `Error updating post with id= ${error}`,
+            });
+        }
     }
-}
+]
+
+
 
 export async function editComment(req, res) {
     try {
@@ -40,7 +50,7 @@ export async function editComment(req, res) {
             { _id: req.params.id, "comments.user_id": req.session.passport.user, "comments._id": commentID },
             {
                 $set: {
-                    "comments.$.comment": req.body.comment
+                    "comments.$.comment": req.body.comment,
                 }
             },
             {passRawResult : true, returnOriginal: false }
