@@ -18,8 +18,12 @@ app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(cors());
-app.use(express_session({ secret: 'keyboard cat', resave: false, saveUninitialized: false }));
+app.use(cors({
+  origin: "http://localhost:3000",
+  methods: ["POST", "PUT", "GET", "OPTIONS", "HEAD"],
+  credentials: true,
+}));
+app.use(express_session({ secret: 'keyboard cat', resave: false, saveUninitialized: false, cookie: { domain:'localhost'} }));
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -33,10 +37,6 @@ app.use(function (req, res, next) {
   next();
 });
 
-// app.get('/', function(req, res) {
-//     res.send('Page under construction.');
-//   });
-  
 app.use('/api', api);
 // app.use('/', router);
 

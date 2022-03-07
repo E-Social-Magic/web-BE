@@ -22,16 +22,14 @@ export function checkNotAuthenticated(req, res, next) {
 }
 
 export function getAllUser(req, res) {
-    User.find({}, col, (err, users) => {
+    User.find({}, (err, users) => {
         if (err) { return res.json({ err }) }
         return res.json({ users: users })
     })
 }
 
 export function info(req, res) {
-    // storage.setItem('role', req.user.role)
     const {password,...user} = req.user._doc;
-    
     return res.json(user);
 };
 

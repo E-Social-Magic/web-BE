@@ -6,11 +6,19 @@ var ObjectIdSchema = Schema.ObjectId;
 var ObjectId = mongoose.Types.ObjectId;
 import _ from 'lodash';
 import multer from 'multer';
-import { storage } from '../../../config/multer.js';
-const upload = multer({ storage: storage });
+import { storageImages } from '../../../config/multer.js';
+const uploadImage = multer({ storage: storageImages, 
+    fileFilter: function (req, file, done) {
+        var ext = path.extname(file.originalname);
+        if(ext !== '.png' && ext !== '.jpg' && ext !== '.gif' && ext !== '.jpeg') {
+            return done(new Error('Only images are allowed'))
+        }
+        done(null, true)
+      }
+});
 
 export const createComment = [
-    upload.array("files"),
+    uploadImage.array("files"),
     async (req, res) => {
         try {
             const post = await Post.findOneAndUpdate(
@@ -41,8 +49,6 @@ export const createComment = [
     }
 ]
 
-
-
 export async function editComment(req, res) {
     try {
         const commentID = new ObjectId(req.params.commentId);
@@ -55,7 +61,6 @@ export async function editComment(req, res) {
             },
             {passRawResult : true, returnOriginal: false }
         );
-        console.log(posts.comments);
         if (_.find(posts.comments,{_id:commentID,comment:req.body.comment}))
             return res.json({ posts, message: 'Comment successfully.' });
         return res.status(403).json({

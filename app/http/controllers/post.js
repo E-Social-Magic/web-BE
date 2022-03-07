@@ -1,16 +1,38 @@
 import db from '../../models/index.model.js';
 const { Post, User } = db;
 // import { body, validationResult } from 'express-validator';
+import _ from 'lodash';
 import multer from 'multer';
-import { storage } from '../../../config/multer.js';
-const upload = multer({ storage: storage });
+import { storageImages, fileFilter } from '../../../config/multer.js';
+const uploadImage = multer({
+    storage: storageImages,
+    fileFilter: fileFilter
+});
 
-export function listPost(req, res) {
-    Post.find({}, (err, posts) => {
-        if (err) { return res.json({ err }) }
-        return res.json({ posts: posts })
-    })
-}
+export const listPost = [async (req, res) => {
+    // destructure offset and limit and set default values
+    const { offset = 1, limit = 10 } = req.query;
+
+    try {
+        // execute query with offset and limit values
+        const posts = await Post.find()
+            .limit(limit * 1)
+            .skip((offset - 1) * limit)
+            .exec();
+
+        // get total documents in the Post collection 
+        const count = await Post.countDocuments();
+
+        // return response with posts, total offsets, and current offset
+        res.json({
+            posts,
+            totalPages: Math.ceil(count / limit),
+            currentPage: offset
+        });
+    } catch (err) {
+        console.error(err.message);
+    }
+}]
 
 export function detailPost(req, res) {
     Post.findById(req.params.id).populate('user_id').exec(function (err, post) {
@@ -23,7 +45,7 @@ export function detailPost(req, res) {
                     content: post.content,
                     username: "anonymously",
                     comments: post.comments,
-                    img: post.img
+                    images: post.images
                 });
             }
             else {
@@ -32,7 +54,7 @@ export function detailPost(req, res) {
                     content: post.content,
                     username: user.username,
                     comments: post.comments,
-                    img: post.img
+                    images: post.images
                 });
             }
 
@@ -41,7 +63,7 @@ export function detailPost(req, res) {
 }
 
 export const createPost = [
-    upload.array("files"),
+    uploadImage.array("files"),
     (req, res, next) => {
         if (!req.body.title) {
             return res.json("Title must not be empty.")
@@ -51,7 +73,8 @@ export const createPost = [
         }
         const post = new Post(req.body);
         post.user_id = req.session.passport.user;
-        post.img = req.files.map((file) => file.path);
+        post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
+        post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
         post.save(function (err) {
             if (err) { return next(err); }
             return res.status(200).json(post);
@@ -60,7 +83,7 @@ export const createPost = [
 ]
 
 export const createPostAnonymously = [
-    upload.array("files"),
+    uploadImage.array("files"),
     (req, res, next) => {
         if (!req.body.title) {
             return res.json("Title must not be empty.")
@@ -71,7 +94,8 @@ export const createPostAnonymously = [
         const post = new Post(req.body);
         post.user_id = req.session.passport.user;
         post.visible = 1;
-        post.img = req.files.map((file) => file.path);
+        post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
+        post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
         post.save(function (err) {
             if (err) { return next(err); }
             return res.status(200).json(post);
@@ -79,24 +103,38 @@ export const createPostAnonymously = [
     }
 ]
 
-export async function editPost(req, res) {
-    try {
-        const post = await Post.findOneAndUpdate(
-            { _id: req.params.id, user_id: req.session.passport.user },
-            req.body,
-            { returnOriginal: false }
-        );
-        if (post)
-            return res.json({ post, message: 'Post was updated successfully.' });
-        return res.status(403).json({
-            message: `Cannot update post with id=${req.params.id}. Maybe post was not found or No permission!`,
-        });
-    } catch (error) {
-        return res.status(500).json({
-            message: `Error updating post with id= ${error}`,
-        });
+export const editPost = [
+    uploadImage.array("files"),
+    async (req, res) => {
+        try {
+            const data = req.body;
+            await Post.findOneAndUpdate(
+                { _id: req.params.id, user_id: req.session.passport.user },
+                data,
+                { returnOriginal: false }
+            );
+            const post = await Post.findOneAndUpdate(
+                { _id: req.params.id, user_id: req.session.passport.user },
+                {
+                    $set: {
+                        "images": req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", "")),
+                    }
+                },
+                { returnOriginal: false }
+            );
+
+            if (post)
+                return res.json({ post, message: 'Post was updated successfully.' });
+            return res.status(403).json({
+                message: `Cannot update post with id=${req.params.id}. Maybe post was not found or No permission!`,
+            });
+        } catch (error) {
+            return res.status(500).json({
+                message: `Error: ${error}`,
+            });
+        }
     }
-}
+]
 
 export async function deletePost(req, res) {
     Post.findOneAndRemove({ _id: req.params.id }, { $or: [{ user_id: req.session.passport.user }, { role: "admin" }] }, (err) => {
@@ -104,3 +142,74 @@ export async function deletePost(req, res) {
         return res.json({ 'mess': 'Delete success' })
     });
 }
+
+export const vote = [
+    async (req, res, next) => {
+        const userId = req.session.passport.user;
+        const postId = req.params.id;
+        const up = req.query.up;
+        const down = req.query.down;
+        // case 1 neu query up =true
+        const post = await Post.findById(postId);
+        //case 1 thiếu query
+        if (!up && !down) {
+            return res.json("Nothing to do")
+        }
+        // case 2 neu query up = true
+        if (up == true) {
+            if (post.voteups.includes(userId)) {
+                // xoa user do ra khoi array
+                await Post.findOneAndUpdate(
+                    { _id: req.params.id, user_id: userId },
+                    {
+                        $pull: {
+                            "voteups": userId
+                        }
+                    },
+                    { returnOriginal: false }
+                );
+            } else {
+                //them user do vao array
+                await Post.findOneAndUpdate(
+                    { _id: req.params.id, user_id: userId },
+                    {
+                        $push: {
+                            voteups: req.session.passport.user
+                        }
+                    },
+                    { returnOriginal: false }
+                );
+            }
+        }
+        // case 3 neu query down = true
+        if (down == true) {
+            if (post.votedowns.includes(userId)) {
+                // xoa user do ra khoi array
+                await Post.findOneAndUpdate(
+                    { _id: req.params.id, user_id: userId },
+                    {
+                        $pull: {
+                            "votedowns":userId
+                        }
+                    },
+                    { returnOriginal: false }
+                );
+            } else {
+                //them user do vao array
+                await Post.findOneAndUpdate(
+                    { _id: req.params.id, user_id: userId },
+                    {
+                        $push: {
+                            votedowns: req.session.passport.user
+                        }
+                    },
+                    { returnOriginal: false }
+                );
+            }
+        }
+        return true;
+        //update laij database
+        ///vote = votesups-votedowns
+        // update voteups array + update votes
+    }
+]

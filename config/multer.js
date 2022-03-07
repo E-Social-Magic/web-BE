@@ -3,12 +3,19 @@ import path from "path";
 const __dirname = path.resolve();
 
 // SET STORAGE
-export const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, path.join(__dirname, 'public') + '/uploads/')
-    },
-    filename: function (req, file, cb) {
-      cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
-    }
-  })
-   
+export const storageImages = multer.diskStorage({
+  destination: function (req, file, done) {
+    done(null, 'public/uploads/images/')
+  },
+  filename: function (req, file, done) {
+    done(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
+  }
+});
+
+export const fileFilter = (req, file, cb) => {
+  if ((file.mimetype).includes('jpeg') || (file.mimetype).includes('png') || (file.mimetype).includes('jpg') || (file.mimetype).includes('mp4')) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
