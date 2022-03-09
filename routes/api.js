@@ -76,6 +76,7 @@ router.get('/logout',
 
 router.get('/posts', postController.listPost);
 router.get('/post/:id', postController.detailPost);
+router.get('/post/:id/vote', userController.checkAuthenticated, postController.vote);
 router.post('/post/new', userController.checkAuthenticated, postController.createPost);
 router.post('/post/newAnonymously', userController.checkAuthenticated, postController.createPostAnonymously);
 router.put('/post/:id/edit', userController.checkAuthenticated, postController.editPost);

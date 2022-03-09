@@ -1,6 +1,5 @@
 import db from '../../models/index.model.js';
 const { Post, User } = db;
-// import { body, validationResult } from 'express-validator';
 import _ from 'lodash';
 import multer from 'multer';
 import { storageImages, fileFilter } from '../../../config/multer.js';
@@ -149,6 +148,7 @@ export const vote = [
         const postId = req.params.id;
         const up = req.query.up;
         const down = req.query.down;
+        console.log(up);
         // case 1 neu query up =true
         const post = await Post.findById(postId);
         //case 1 thiếu query
@@ -156,11 +156,12 @@ export const vote = [
             return res.json("Nothing to do")
         }
         // case 2 neu query up = true
-        if (up == true) {
+        if (up == "true") {
+            console.log("hello");
             if (post.voteups.includes(userId)) {
                 // xoa user do ra khoi array
                 await Post.findOneAndUpdate(
-                    { _id: req.params.id, user_id: userId },
+                    { _id: req.params.id},
                     {
                         $pull: {
                             "voteups": userId
@@ -171,10 +172,10 @@ export const vote = [
             } else {
                 //them user do vao array
                 await Post.findOneAndUpdate(
-                    { _id: req.params.id, user_id: userId },
+                    { _id: req.params.id },
                     {
                         $push: {
-                            voteups: req.session.passport.user
+                            voteups: userId
                         }
                     },
                     { returnOriginal: false }
@@ -182,11 +183,11 @@ export const vote = [
             }
         }
         // case 3 neu query down = true
-        if (down == true) {
+        if (down == "true") {
             if (post.votedowns.includes(userId)) {
                 // xoa user do ra khoi array
                 await Post.findOneAndUpdate(
-                    { _id: req.params.id, user_id: userId },
+                    { _id: req.params.id },
                     {
                         $pull: {
                             "votedowns":userId
@@ -197,7 +198,7 @@ export const vote = [
             } else {
                 //them user do vao array
                 await Post.findOneAndUpdate(
-                    { _id: req.params.id, user_id: userId },
+                    { _id: req.params.id },
                     {
                         $push: {
                             votedowns: req.session.passport.user
@@ -207,9 +208,14 @@ export const vote = [
                 );
             }
         }
-        return true;
-        //update laij database
-        ///vote = votesups-votedowns
-        // update voteups array + update votes
+        const newpost = await Post.findById(postId);
+        const {votedowns,voteups} = newpost
+        const votes = voteups.length - votedowns.length;
+        await Post.findOneAndUpdate(
+            { _id: req.params.id, user_id: req.session.passport.user },
+            { votes : votes},
+            { returnOriginal: false }
+        );
+        return res.json(votes);
     }
 ]

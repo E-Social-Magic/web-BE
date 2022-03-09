@@ -5,7 +5,7 @@ const __dirname = path.resolve();
 // SET STORAGE
 export const storageImages = multer.diskStorage({
   destination: function (req, file, done) {
-    done(null, 'public/uploads/images/')
+    done(null, 'public/uploads/')
   },
   filename: function (req, file, done) {
     done(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
