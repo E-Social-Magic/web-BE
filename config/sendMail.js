@@ -22,7 +22,6 @@ const sendMail = (email, subject, view) => {
     subject: subject,
     html: view   
   }
-  console.log("sended");
   return transporter.sendMail(options)
 }
 

@@ -1,31 +1,30 @@
 import db from '../../models/index.model.js';
 const { User } = db;
 import sendMail from '../../../config/sendMail.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import validator from 'express-validator';
 const { body, check, validationResult } = validator;
 import _ from 'lodash';
+import multer from 'multer';
+import { storageImages } from '../../../config/multer.js';
+const uploadImage = multer({
+    storage: storageImages,
+    fileFilter: (req, file, cb) => {
+        if ((file.mimetype).includes('jfif') || (file.mimetype).includes('jpeg') || (file.mimetype).includes('png') || (file.mimetype).includes('jpg')) {
+          cb(null, true);
+        } else {
+          cb(null, false);
+        }
+    }
+});
 var code;
 
-export function checkAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next()
+export async function getAllUser(req, res) {
+    if(req.user.role == "admin"){
+        const users = await User.find({},{password: 0})
+        return res.json({users: users});
     }
-    return res.status(401).send({ success: false, message: 'Authentication failed.' });
-}
-
-export function checkNotAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return res.json({ success: true, message: 'Logged in' })
-    }
-    next()
-}
-
-export function getAllUser(req, res) {
-    User.find({}, (err, users) => {
-        if (err) { return res.json({ err }) }
-        return res.json({ users: users })
-    })
+    return res.status(403).json({success: false, message: "No permission!"});
 }
 
 export function info(req, res) {
@@ -81,7 +80,9 @@ export function signup(req, res, next) {
         })
 }
 
-export function createAccount(req, res, next) {
+export const createAccount = [
+    uploadImage.single("avatarP"),
+    async (req, res, next) => {
     if (req.body.code == code) {
         bcrypt.hash(req.body.password, 10, function (err, hash) {
             var user = new User(
@@ -89,6 +90,8 @@ export function createAccount(req, res, next) {
                     username: req.body.username,
                     email: req.body.email,
                     password: hash,
+                    level: req.body.level,
+                    avatar :  req.protocol + "://" + req.headers.host + req.file.path.replace("public", ""),
                     role: "user"
                 });
             user.save(function (err) {
@@ -105,7 +108,31 @@ export function createAccount(req, res, next) {
     else {
         return res.json({ account: req.body, err: 'Incorrect code' })
     }
-}
+}]
+
+export const editAccount = [
+    uploadImage.single("avatarP"),
+    async (req, res) => {
+        try {
+            const data = req.body;
+            data.avatar = req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
+            const user = await User.findOneAndUpdate(
+                { _id: req.params.id, user_id: req.user.user_id },
+                data,
+                { returnOriginal: false }
+            );
+            if (user)
+                return res.json({ user, message: 'User was updated successfully.' });
+            return res.status(403).json({
+                message: `Cannot update user with id=${req.params.id}. Maybe user was not found or No permission!`,
+            });
+        } catch (error) {
+            return res.status(500).json({
+                message: `Error: ${error}`,
+            });
+        }
+    }
+]
 
 export const sendmailFogot = [
     body('email').trim().isLength({ min: 1 }).escape().withMessage('Email must not be empty.')
@@ -117,7 +144,6 @@ export const sendmailFogot = [
             return res.json({ account: req.body, errors: errors.array() });
         }
         else {
-
             User.findOne({
                 email: req.body.email
             })
@@ -134,7 +160,6 @@ export const sendmailFogot = [
                     }
                 }
                 )
-
         }
     }
 ];

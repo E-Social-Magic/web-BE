@@ -42,7 +42,7 @@ export function detailPost(req, res) {
                 return res.json({
                     title: post.title,
                     content: post.content,
-                    username: "anonymously",
+                    username: "Anonymously",
                     comments: post.comments,
                     images: post.images
                 });
@@ -71,7 +71,7 @@ export const createPost = [
             return res.json("Content must not be empty.")
         }
         const post = new Post(req.body);
-        post.user_id = req.session.passport.user;
+        post.user_id = req.user.user_id;
         post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
         post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
         post.save(function (err) {
@@ -91,7 +91,7 @@ export const createPostAnonymously = [
             return res.json("Content must not be empty.")
         }
         const post = new Post(req.body);
-        post.user_id = req.session.passport.user;
+        post.user_id = req.user.user_id;
         post.visible = 1;
         post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
         post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
@@ -108,12 +108,12 @@ export const editPost = [
         try {
             const data = req.body;
             await Post.findOneAndUpdate(
-                { _id: req.params.id, user_id: req.session.passport.user },
+                { _id: req.params.id, user_id: req.user.user_id },
                 data,
                 { returnOriginal: false }
             );
             const post = await Post.findOneAndUpdate(
-                { _id: req.params.id, user_id: req.session.passport.user },
+                { _id: req.params.id, user_id: req.user.user_id },
                 {
                     $set: {
                         "images": req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", "")),
@@ -136,7 +136,7 @@ export const editPost = [
 ]
 
 export async function deletePost(req, res) {
-    Post.findOneAndRemove({ _id: req.params.id }, { $or: [{ user_id: req.session.passport.user }, { role: "admin" }] }, (err) => {
+    Post.findOneAndRemove({ _id: req.params.id }, { $or: [{ user_id: req.user.user_id }, { role: "admin" }] }, (err) => {
         if (err) { return res.json({ err }) }
         return res.json({ 'mess': 'Delete success' })
     });
@@ -144,7 +144,7 @@ export async function deletePost(req, res) {
 
 export const vote = [
     async (req, res, next) => {
-        const userId = req.session.passport.user;
+        const userId = req.user.user_id;
         const postId = req.params.id;
         const up = req.query.up;
         const down = req.query.down;
@@ -201,7 +201,7 @@ export const vote = [
                     { _id: req.params.id },
                     {
                         $push: {
-                            votedowns: req.session.passport.user
+                            votedowns: userId
                         }
                     },
                     { returnOriginal: false }
@@ -212,7 +212,7 @@ export const vote = [
         const {votedowns,voteups} = newpost
         const votes = voteups.length - votedowns.length;
         await Post.findOneAndUpdate(
-            { _id: req.params.id, user_id: req.session.passport.user },
+            { _id: req.params.id, user_id: req.user.user_id },
             { votes : votes},
             { returnOriginal: false }
         );

@@ -13,7 +13,7 @@ export const storageImages = multer.diskStorage({
 });
 
 export const fileFilter = (req, file, cb) => {
-  if ((file.mimetype).includes('jpeg') || (file.mimetype).includes('png') || (file.mimetype).includes('jpg') || (file.mimetype).includes('mp4')) {
+  if ((file.mimetype).includes('jfif') || (file.mimetype).includes('jpeg') || (file.mimetype).includes('png') || (file.mimetype).includes('jpg') || (file.mimetype).includes('mp4')) {
     cb(null, true);
   } else {
     cb(null, false);

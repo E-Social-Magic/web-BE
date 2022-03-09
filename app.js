@@ -6,7 +6,6 @@ import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import HTTPStatus from 'http-status'
-import express_session from "express-session";
 import router from './routes/index.route.js';
 import api from './routes/api.js';
 import passport from './config/passport.js';
@@ -23,24 +22,6 @@ app.use(cors({
   methods: ["POST", "PUT", "GET", "OPTIONS", "HEAD"],
   credentials: true,
 }));
-app.use(express_session({ secret: 'keyboard cat', resave: false, saveUninitialized: false, cookie: { domain:'localhost'} }));
-app.use(passport.initialize());
-app.use(passport.session());
-
-app.use(function (req, res, next) {
-  var msgs = req.session.messages || [];
-  var err = req.session.errors || [];
-  res.locals.messages = msgs;
-  res.locals.errors = err;
-  res.locals.hasMessages = !!msgs.length;
-  req.session.messages = [];
-  next();
-});
-
 app.use('/api', api);
-// app.use('/', router);
-
-// app.use(function (req, res, next) {
-//     return res.status(HTTPStatus.NOT_FOUND).send()  });
 
 export default app;

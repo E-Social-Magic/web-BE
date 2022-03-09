@@ -2,9 +2,11 @@ import mongoose from 'mongoose';
 
 const schema = new mongoose.Schema(
     {
-        name: { type: String, required: true, maxLength: 100 },
+        group_name: { type: String, required: true, maxLength: 100 },
         subject: {type: String, required: true },
-        private_dt: { type: Object, required: true},
+        private_dt: { type: Array, required: false, default: []},
+        user_id: { type: Array, required: false, default: []},
+        avatar: { type: String, required: true },
         visible: { type: Number, default: 0, required: false }
     },
     { timestamps: true }

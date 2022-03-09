@@ -1,8 +1,7 @@
 import passport from 'passport';
-import { Strategy as JsonCustomStrategy } from 'passport-json-custom';
+
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as FaceBookStrategy } from 'passport-facebook';
-import bcrypt from 'bcrypt';
 import db from '../app/models/index.model.js';
 const { User } = db;
 
@@ -16,23 +15,6 @@ passport.deserializeUser((id, done) => {
     });
 });
 
-passport.use(new JsonCustomStrategy(
-    function (credentials, done) {
-        User.findOne({ username: credentials.username }, function (err, user) {
-            if (err) { return done(err); }
-            if (!user) { return done({ message: 'User not found' }, false ); }
-            bcrypt.compare(credentials.password, user.password, function (err, result) {
-                if (err) {
-                    return done(err);
-                }
-                if (!result) {
-                    return done({ message: 'Incorrect password' }, false );
-                }
-                return done(null, user);
-            })
-        });
-    }
-));
 
 passport.use(new GoogleStrategy({
     clientID: '781009823760-7ekibvct2t9h9gus4t3cifc2mshljp0k.apps.googleusercontent.com',

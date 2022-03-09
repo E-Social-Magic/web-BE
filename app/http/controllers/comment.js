@@ -28,7 +28,7 @@ export const createComment = [
                         comments: {
                             _id: new ObjectId(),
                             comment: req.body.comment,
-                            user_id: req.session.passport.user,
+                            user_id: req.user,
                             images: req.files.map((file) => file.path)
                         }
                     }
@@ -53,7 +53,7 @@ export async function editComment(req, res) {
     try {
         const commentID = new ObjectId(req.params.commentId);
         const posts = await Post.findOneAndUpdate(
-            { _id: req.params.id, "comments.user_id": req.session.passport.user, "comments._id": commentID },
+            { _id: req.params.id, "comments.user_id": req.user, "comments._id": commentID },
             {
                 $set: {
                     "comments.$.comment": req.body.comment,
@@ -77,7 +77,7 @@ export async function deleteComment(req, res) {
     try {
         const commentID = new ObjectId(req.params.commentId);
         const post = await Post.findOneAndUpdate(
-            { _id: req.params.id, user_id: req.session.passport.user },
+            { _id: req.params.id, user_id: req.user },
             { $pull: { "comments": {_id: commentID}}},
             { returnOriginal: false }
         );

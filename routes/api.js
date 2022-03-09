@@ -7,6 +7,11 @@ import * as commentController from '../app/http/controllers/comment.js';
 import * as subjectController from '../app/http/controllers/subject.js';
 import * as groupController from '../app/http/controllers/group.js';
 import * as privateDataController from '../app/http/controllers/private_data.js';
+import verifyToken from '../app/http/middlewares/auth.js';
+import auth from './auth.js';
+import jwt from 'jsonwebtoken';
+const { TOKEN_KEY } = env;
+import env from '../config/config.js';
 
 
 router.get('/signup',
@@ -15,25 +20,11 @@ router.get('/signup',
   });
 router.post('/signup', userController.userValidator, userController.signup);
 
-router.get('/user/info', [userController.checkAuthenticated, userController.info]);
+router.get('/user/info', [userController.info]);
 
-router.get('/login', [userController.checkNotAuthenticated, userController.login]);
+router.get('/users', verifyToken, [userController.getAllUser]);
 
-router.get('/users', [userController.checkAuthenticated, userController.getAllUser]);
-
-router.post('/login',
-  passport.authenticate('json-custom', { failWithError: true }),
-  function (req, res) {
-    res.status(200).json({ success: true, message: 'Login success', token:req.sessionID });
-  },
-  function (err, req, res, next) {
-    console.log(req.message);
-    res.status(200).json({
-      success: req.isAuthenticated(),
-      message: err.message
-    });
-  },
-);
+router.post('/login', auth);
 
 router.get('/login/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
@@ -42,8 +33,7 @@ router.get('/login/google',
 router.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login', failureMessage: true }),
   function (req, res) {
-    // Successful authentication, redirect home.
-    res.redirect('/');
+    res.status(200).json({ success: true, message: 'Login success' });
   });
 
 //router login fb
@@ -54,7 +44,7 @@ router.get('/login/facebook',
 router.get('/auth/facebook/callback',
   passport.authenticate('facebook', { failureRedirect: '/login', failureMessage: true }),
   function (req, res) {
-    res.redirect('/');
+    res.status(200).json({ success: true, message: 'Login success' });
   });
 
 router.post('/verify', userController.createAccount);
@@ -68,39 +58,37 @@ router.post('/sendmail_forget', userController.sendmailFogot);
 router.post('/sendmail_forget/confirm', userController.updatePassword);
 
 //router logout
-router.get('/logout',
-  function (req, res) {
-    req.logout();
-    res.status(200).json({ success: true, message: 'Logout success' });
-  });
+router.post('/logout', (req, res) => {
+  return res.status(200).json("Logged out successfully!");
+});
 
 router.get('/posts', postController.listPost);
 router.get('/post/:id', postController.detailPost);
-router.get('/post/:id/vote', userController.checkAuthenticated, postController.vote);
-router.post('/post/new', userController.checkAuthenticated, postController.createPost);
-router.post('/post/newAnonymously', userController.checkAuthenticated, postController.createPostAnonymously);
-router.put('/post/:id/edit', userController.checkAuthenticated, postController.editPost);
-router.delete('/post/:id', userController.checkAuthenticated, postController.deletePost);
+router.get('/post/:id/vote', verifyToken, postController.vote);
+router.post('/post/new', verifyToken, postController.createPost);
+router.post('/post/newAnonymously', verifyToken, postController.createPostAnonymously);
+router.put('/post/:id/edit', verifyToken, postController.editPost);
+router.delete('/post/:id', verifyToken, postController.deletePost);
 
 
-router.put('/post/:id/comment', userController.checkAuthenticated, commentController.createComment);
-router.put('/post/:id/comment/:commentId/edit', userController.checkAuthenticated, commentController.editComment);
-router.delete('/post/:id/comment/:commentId', userController.checkAuthenticated, commentController.deleteComment);
+router.put('/post/:id/comment', verifyToken, commentController.createComment);
+router.put('/post/:id/comment/:commentId/edit', verifyToken, commentController.editComment);
+router.delete('/post/:id/comment/:commentId', verifyToken, commentController.deleteComment);
 
-router.put('/user/:id/subject/new', userController.checkAuthenticated, subjectController.createSubject);
-router.put('/user/:id/subject/:subjectId/edit', userController.checkAuthenticated, subjectController.editSubject);
-router.delete('/user/:id/subject/:subjectId', userController.checkAuthenticated, subjectController.deleteSubject);
+router.put('/subject/join', verifyToken, subjectController.createSubject);
+router.put('/subject/:id/edit', verifyToken, subjectController.editSubject);
+router.delete('/subject/:id', verifyToken, subjectController.deleteSubject);
 
 router.get('/groups', groupController.listGroup);
 router.get('/group/:id', groupController.detailGroup);
-router.post('/group/new', userController.checkAuthenticated, groupController.createGroup);
-router.put('/group/:id/edit', userController.checkAuthenticated, groupController.editGroup);
-router.delete('/group/:id', userController.checkAuthenticated, groupController.deleteGroup);
+router.post('/group/new', verifyToken, groupController.createGroup);
+router.put('/group/:id/edit', verifyToken, groupController.editGroup);
+router.delete('/group/:id', verifyToken, groupController.deleteGroup);
 
 router.get('/private_datas', privateDataController.listPrivateData);
 router.get('/private_data/:id', privateDataController.deletePrivateData);
-router.post('/private_data/new', userController.checkAuthenticated, privateDataController.createPrivateData);
-router.put('/private_data/:id/edit', userController.checkAuthenticated, privateDataController.editPrivateData);
-router.delete('/private_data/:id', userController.checkAuthenticated, privateDataController.deletePrivateData);
+router.post('/private_data/new', verifyToken, privateDataController.createPrivateData);
+router.put('/private_data/:id/edit', verifyToken, privateDataController.editPrivateData);
+router.delete('/private_data/:id', verifyToken, privateDataController.deletePrivateData);
 
 export default router;

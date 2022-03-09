@@ -1,5 +1,5 @@
 import db from '../../models/index.model.js';
-const { User } = db;
+const { User, Group } = db;
 import mongoose from 'mongoose';
 var Schema = mongoose.Schema;
 var ObjectIdSchema = Schema.ObjectId;
@@ -9,24 +9,32 @@ import _ from 'lodash';
 export const createSubject = [
     async (req, res) => {
         try {
-            const user = await User.findOneAndUpdate(
-                { _id: req.params.id },
+            if(!(req.body.subjects instanceof Array)){
+                return res.status(400).end();
+            }
+            const groups = await Group.find({ _id: req.body.subjects });
+            const arr = groups.map(group => group._id);
+            await Group.updateMany(
+                { _id:{$in: arr}},
                 {
-                    $push: {
-                        subjects: {
-                            _id: new ObjectId(),
-                            subject: req.body.subject,
-                        }
-                    }
+                 $push: {user_id: req.user.user_id}
                 },
                 { returnOriginal: false }
-            );
-
-            if (user)
+            )
+            const user = await User.findOneAndUpdate(
+                    { _id: req.user.user_id },
+                    {
+                    subjects: arr
+                    },
+                    { returnOriginal: false }
+                );
+            
+            if(user) 
                 return res.json({ subjects: user.subjects, message: 'Add subject successfully.' });
             return res.status(403).json({
-                message: `Cannot add subject at user_id=${req.params.id}. Maybe user was not found or No permission!`,
+                message: `Cannot add subject at user_id=${req.user.user_id}. Maybe user was not found or No permission!`,
             });
+
         } catch (error) {
             return res.status(500).json({
                 message: `Error: ${error}`,
@@ -37,17 +45,27 @@ export const createSubject = [
 
 export async function editSubject(req, res) {
     try {
-        const subjectID = new ObjectId(req.params.subjectId);
-        const user = await User.findOneAndUpdate(
-            { _id: req.params.id, "subjects._id": subjectID },
+        if(!(req.body.subjects instanceof Array)){
+            return res.status(400).end();
+        }
+        const groups = await Group.find({ _id: req.body.subjects });
+        const arr = groups.map(group => group._id);
+        await Group.updateMany(
+            { _id:{$in: arr}},
             {
-                $set: {
-                    "subjects.$.subject": req.body.subject,
-                }
+             $push: {user_id: req.user.user_id}
             },
-            { passRawResult: true, returnOriginal: false }
-        );
-        if (_.find(user.subjects, { _id: subjectID, subject: req.body.subject }))
+            { returnOriginal: false }
+        )
+        const user = await User.findOneAndUpdate(
+                { _id: req.user.user_id },
+                {
+                    $push: {subjects: arr}
+                },
+                { returnOriginal: false }
+            );
+        
+        if(user)
             return res.json({ subjects: user.subjects, message: 'Subject successfully.' });
         return res.status(403).json({
             message: `Cannot edit subject at id=${subjectID}!`,
@@ -61,12 +79,25 @@ export async function editSubject(req, res) {
 
 export async function deleteSubject(req, res) {
     try {
-        const subjectID = new ObjectId(req.params.subjectId);
-        const user = await User.findOneAndUpdate(
-            { _id: req.params.id, user_id: req.session.passport.user },
-            { $pull: { "subjects": { _id: subjectID } } },
+        if(!(req.body.subjects instanceof Array)){
+            return res.status(400).end();
+        }
+        const groups = await Group.find({ _id: req.body.subjects });
+        const arr = groups.map(group => group._id);
+        await Group.updateMany(
+            { _id:{$in: arr}},
+            {
+             $pull: {user_id: req.user.user_id}
+            },
             { returnOriginal: false }
-        );
+        )
+        const user = await User.findOneAndUpdate(
+                { _id: req.user.user_id },
+                {
+                    $pull: {subjects: arr}
+                },
+                { returnOriginal: false }
+            );
         if (user)
             return res.json({ subjects: user.subjects, message: 'Delete successfully.' });
         return res.status(403).json({
