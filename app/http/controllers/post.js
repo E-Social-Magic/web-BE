@@ -9,20 +9,13 @@ const uploadImage = multer({
 });
 
 export const listPost = [async (req, res) => {
-    // destructure offset and limit and set default values
     const { offset = 1, limit = 10 } = req.query;
-
     try {
-        // execute query with offset and limit values
-        const posts = await Post.find()
+        const posts = await Post.find({visible: { $ne: -1}})
             .limit(limit * 1)
             .skip((offset - 1) * limit)
             .exec();
-
-        // get total documents in the Post collection 
         const count = await Post.countDocuments();
-
-        // return response with posts, total offsets, and current offset
         res.json({
             posts,
             totalPages: Math.ceil(count / limit),
@@ -47,7 +40,10 @@ export function detailPost(req, res) {
                     images: post.images
                 });
             }
-            else {
+            else if (post.visible == -1) {
+                return res.json({message: "Bài viết đã bị chặn bởi Admin"})
+            }
+            else{
                 return res.json({
                     title: post.title,
                     content: post.content,
@@ -56,7 +52,6 @@ export function detailPost(req, res) {
                     images: post.images
                 });
             }
-
         })
     })
 }
@@ -219,3 +214,25 @@ export const vote = [
         return res.json(votes);
     }
 ]
+
+export const blockPost = async (req, res, next) => {
+    try {
+        if (req.user.role == "admin") {
+            const { visible } = req.body;
+            const post = await Post.findOneAndUpdate(
+                { _id: req.params.id },
+                { visible },
+                { returnOriginal: false }
+            );
+            if (post)
+                return res.json({ post, message: 'Post was blocked successfully.' });
+        }
+        return res.status(403).json({
+            message: `Cannot blocked post with id=${req.params.id}. Maybe post was not found or No permission!`,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error: ${error}`,
+        });
+    }
+}

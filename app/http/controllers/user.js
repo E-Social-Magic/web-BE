@@ -11,29 +11,25 @@ const uploadImage = multer({
     storage: storageImages,
     fileFilter: (req, file, cb) => {
         if ((file.mimetype).includes('jfif') || (file.mimetype).includes('jpeg') || (file.mimetype).includes('png') || (file.mimetype).includes('jpg')) {
-          cb(null, true);
+            cb(null, true);
         } else {
-          cb(null, false);
+            cb(null, false);
         }
     }
 });
 var code;
 
 export async function getAllUser(req, res) {
-    if(req.user.role == "admin"){
-        const users = await User.find({},{password: 0})
-        return res.json({users: users});
+    if (req.user.role == "admin") {
+        const users = await User.find({}, { password: 0 })
+        return res.json({ users: users });
     }
-    return res.status(403).json({success: false, message: "No permission!"});
+    return res.status(403).json({ success: false, message: "No permission!" });
 }
 
 export function info(req, res) {
-    const {password,...user} = req.user._doc;
+    const { password, ...user } = req.user._doc;
     return res.json(user);
-};
-
-export function login(req, res) {
-    return res.json({ title: 'Login to Account' })
 };
 
 export const userValidator = [
@@ -72,7 +68,7 @@ export function signup(req, res, next) {
                 var subject = "Email for verify"
                 var view = "<h2>Hello</h2><p>This is code for verify your account: " + code + " </p>";
                 sendMail(req.body.email, subject, view);
-                return res.status(200).json( req.body )
+                return res.status(200).json(req.body)
             }
         })
         .catch(err => {
@@ -83,32 +79,32 @@ export function signup(req, res, next) {
 export const createAccount = [
     uploadImage.single("avatarP"),
     async (req, res, next) => {
-    if (req.body.code == code) {
-        bcrypt.hash(req.body.password, 10, function (err, hash) {
-            var user = new User(
-                {
-                    username: req.body.username,
-                    email: req.body.email,
-                    password: hash,
-                    level: req.body.level,
-                    avatar :  req.protocol + "://" + req.headers.host + req.file.path.replace("public", ""),
-                    role: "user"
+        if (req.body.code == code) {
+            bcrypt.hash(req.body.password, 10, function (err, hash) {
+                var user = new User(
+                    {
+                        username: req.body.username,
+                        email: req.body.email,
+                        password: hash,
+                        level: req.body.level,
+                        avatar: req.protocol + "://" + req.headers.host + req.file.path.replace("public", ""),
+                        role: "user"
+                    });
+                user.save(function (err) {
+                    if (err) {
+                        return next(err);
+                    }
+                    var subject = "Notice of successful registrationThanks "
+                    var view = "<h2>Welcome</h2><p>You have successfully registered</p>";
+                    sendMail(req.body.email, subject, view);
+                    return res.json({ success: true, message: 'Successful created new user.' });
                 });
-            user.save(function (err) {
-                if (err) {
-                    return next(err);
-                }
-                var subject = "Notice of successful registrationThanks "
-                var view = "<h2>Welcome</h2><p>You have successfully registered</p>";
-                sendMail(req.body.email, subject, view);
-                return res.json({ success: true, message: 'Successful created new user.' });
-            });
-        })
-    }
-    else {
-        return res.json({ account: req.body, err: 'Incorrect code' })
-    }
-}]
+            })
+        }
+        else {
+            return res.json({ account: req.body, err: 'Incorrect code' })
+        }
+    }]
 
 export const editAccount = [
     uploadImage.single("avatarP"),
@@ -153,7 +149,7 @@ export const sendmailFogot = [
                         var subject = "Email forgot password"
                         var view = "<h2>Hello</h2><p>This is code for reset password: " + code + " </p>";
                         sendMail(req.body.email, subject, view);
-                        return res.json({email: result.email, message: "Check code in your email"})
+                        return res.json({ email: result.email, message: "Check code in your email" })
                     }
                     else {
                         return res.json({ err: 'The email does not exist' })
@@ -167,9 +163,9 @@ export const sendmailFogot = [
 export function updatePassword(req, res, next) {
     if (req.body.code == code && req.body.confirm == req.body.password) {
         bcrypt.hash(req.body.password, 10, function (err, hash) {
-            User.findOneAndUpdate( {email: req.body.email}, { $set: { password: hash } }, function (err) {
+            User.findOneAndUpdate({ email: req.body.email }, { $set: { password: hash } }, function (err) {
                 if (err) { return next(err); }
-                return res.json({success: true, message: "Changed password"});
+                return res.json({ success: true, message: "Changed password" });
 
             });
         })
@@ -179,3 +175,24 @@ export function updatePassword(req, res, next) {
     }
 };
 
+export const blockUser = async (req, res, next) => {
+    try {
+        if (req.user.role == "admin") {
+            const { visible } = req.body;
+            const user = await User.findOneAndUpdate(
+                { _id: req.params.id },
+                { visible },
+                { returnOriginal: false }
+            );
+            if (user)
+                return res.json({ user, message: 'User was blocked successfully.' });
+        }
+        return res.status(403).json({
+            message: `Cannot blocked user with id=${req.params.id}. Maybe user was not found or No permission!`,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error: ${error}`,
+        });
+    }
+}
