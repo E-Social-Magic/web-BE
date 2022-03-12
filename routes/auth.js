@@ -27,6 +27,9 @@ router.post('/login', async (req, res) => {
     }
     const oldUser = await User.findOne({ username });
     if (oldUser && (await bcrypt.compare(password, oldUser.password))) {
+      if(oldUser.visible == -1){
+        return res.status(HTTPStatus.OK).json({message:"Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với Quản trị viên để biết thêm thông tin"});
+      }
       const token = jwt.sign({ user_id: oldUser._id, username, role:oldUser.role }, TOKEN_KEY, {
         algorithm: 'HS384',
         expiresIn: '2h',
