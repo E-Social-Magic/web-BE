@@ -7,10 +7,16 @@ const schema = new mongoose.Schema(
     password: { type: String, required: false, minLength: 6 },
     googleID: { type: String, required: false },
     facebookID: { type: String, required: false },
-    avatar: { type: String, required: true },
+    avatar: { type: String, required: false },
+    address: { type: String, required: false },
+    payment_id: { type: String, required: false },
+    follower: { type: Array, default:[], required: false },
+    phone: { type: String, required: false },
+    description: { type: String, required: false },
     subjects: {type: Array, required: false},
+    coins: { type: Number, default: 0, required: false },
     level: { type: String, required: false},
-    visible: { type: Number, default: 0, required: false },
+    blocked: { type: Boolean, default: false, required: false },
     role: { type: String, required: true, enum: ['admin', 'user']}
   },
   { timestamps: true }

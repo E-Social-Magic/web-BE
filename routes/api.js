@@ -3,6 +3,7 @@ const router = express.Router();
 import passport from '../config/passport.js';
 import * as userController from '../app/http/controllers/user.js';
 import * as postController from '../app/http/controllers/post.js';
+import * as helperController from '../app/http/controllers/helper.js';
 import * as commentController from '../app/http/controllers/comment.js';
 import * as subjectController from '../app/http/controllers/subject.js';
 import * as groupController from '../app/http/controllers/group.js';
@@ -15,8 +16,8 @@ import auth from './auth.js';
     function (req, res, next) {
       res.json({ title: "Create Account", message: "Get UI for Create Account" });
     });
-  router.post('/verify', userController.createAccount);
-  router.post('/signup', userController.userValidator, userController.signup);
+  router.post('/signup', userController.userValidator, userController.createAccount, auth);
+  // router.post('/signup', userController.signup);
 
 // Đăng nhập 
   router.post('/login', auth);
@@ -48,8 +49,8 @@ import auth from './auth.js';
     function (req, res) {
       res.json({ message: "Sended" });
     });
-  router.post('/sendmail_forget', userController.sendmailFogot);
-  router.post('/sendmail_forget/confirm', userController.updatePassword);
+  router.post('/sendmailForget', userController.sendmailFogot);
+  router.post('/sendmailForget/confirm', userController.updatePassword);
 
 // Đăng xuất
   router.post('/logout', (req, res) => {
@@ -58,13 +59,16 @@ import auth from './auth.js';
 
 // Post 
   router.get('/posts', postController.listPost);
+  router.get('/posts/admin', verifyToken, postController.listPostForAd);
   router.get('/post/:id', postController.detailPost);
+  router.get('/post/:id/admin', verifyToken, postController.detailPostForAd);
   router.get('/post/:id/vote', verifyToken, postController.vote);
   router.post('/post/new', verifyToken, postController.createPost);
-  router.post('/post/newAnonymously', verifyToken, postController.createPostAnonymously);
   router.post('/post/:id/block', verifyToken, postController.blockPost);
   router.put('/post/:id/edit', verifyToken, postController.editPost);
   router.delete('/post/:id', verifyToken, postController.deletePost);
+
+// Helper
 
 // Comment
   router.put('/post/:id/comment', verifyToken, commentController.createComment);

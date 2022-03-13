@@ -8,65 +8,156 @@ const uploadImage = multer({
     fileFilter: fileFilter
 });
 
-export const listPost = [async (req, res) => {
-    const { offset = 1, limit = 10 } = req.query;
-    try {
-        const posts = await Post.find({visible: { $ne: -1}})
-            .limit(limit * 1)
-            .skip((offset - 1) * limit)
-            .exec();
-        const count = await Post.countDocuments();
-        res.json({
-            posts,
-            totalPages: Math.ceil(count / limit),
-            currentPage: offset
-        });
-    } catch (err) {
-        console.error(err.message);
-    }
-}]
+export const listPost = [
+    async (req, res) => {
+        const { offset = 1, limit = 10 } = req.query;
+        try {
+            if (req.query.search) {
+                const posts = await Post.find({
+                    $and: [
+                        { blocked: { $ne: true } },
+                        { private: { $ne: true } },
+                        {
+                            $text: {
+                                $search: req.query.search
+                            }
+                        }
+                    ]
+                })
+                    .limit(limit * 1)
+                    .skip((offset - 1) * limit)
+                    .exec();
+                const count = await Post.countDocuments();
+                return res.json({
+                    posts, totalPages: Math.ceil(count / limit),
+                    currentPage: offset, message: 'Hoàn thành tìm kiếm'
+                });
+            }
+            else {
+                const posts = await Post.find({
+                    $and: [
+                        { blocked: { $ne: true } },
+                        { private: { $ne: true } }
+                    ]
+                })
+                    .limit(limit * 1)
+                    .skip((offset - 1) * limit)
+                    .exec();
+                const count = await Post.countDocuments();
+                return res.json({
+                    posts,
+                    totalPages: Math.ceil(count / limit),
+                    currentPage: offset
+                });
+            }
+        } catch (err) {
+            console.error(err.message);
+        }
+    },
+]
 
-export function detailPost(req, res) {
-    Post.findById(req.params.id).populate('user_id').exec(function (err, post) {
-        if (err) { return res.json({ err }) }
-        User.findById(post.user_id).exec(function (err, user) {
-            if (err) { return res.json({ err }) }
-            if (post.visible == 1) {
+export const listPostForAd = [
+    async (req, res) => {
+        const { offset = 1, limit = 10 } = req.query;
+        try {
+            if (req.user.role == "admin") {
+                const posts = await Post.find({})
+                    .limit(limit * 1)
+                    .skip((offset - 1) * limit)
+                    .exec();
+                const count = await Post.countDocuments();
                 return res.json({
-                    title: post.title,
-                    content: post.content,
-                    username: "Anonymously",
-                    comments: post.comments,
-                    images: post.images
+                    posts,
+                    totalPages: Math.ceil(count / limit),
+                    currentPage: offset
                 });
             }
-            else if (post.visible == -1) {
-                return res.json({message: "Bài viết đã bị chặn bởi Admin"})
-            }
-            else{
+            else if (req.query.search && req.user.role == "admin") {
+                const posts = await Post.find({
+                    $text: {
+                        $search: req.query.search
+                    }
+                })
+                    .limit(limit * 1)
+                    .skip((offset - 1) * limit)
+                    .exec();
+                const count = await Post.countDocuments();
                 return res.json({
-                    title: post.title,
-                    content: post.content,
-                    username: user.username,
-                    comments: post.comments,
-                    images: post.images
+                    posts, totalPages: Math.ceil(count / limit),
+                    currentPage: offset, message: 'Hoàn thành tìm kiếm'
                 });
             }
-        })
-    })
+        } catch (err) {
+            console.error(err.message);
+        }
+    },
+]
+
+export const detailPost = async (req, res) => {
+    try {
+        const post = await Post.findById({ _id: req.params.id });
+        const user = await User.findById(post.user_id);
+        if (post.blocked == true) {
+            return res.json({ message: "Bài viết đã bị chặn bởi Admin" })
+        }
+        else {
+            return res.json({
+                title: post.title,
+                content: post.content,
+                username: user.username,
+                comments: post.comments,
+                images: post.images,
+                coins: post.coins
+            });
+        }
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error: ${error}`,
+        });
+    }
 }
 
+export const detailPostForAd = async (req, res) => {
+    try {
+        const post = await Post.findOne({_id: req.params.id});
+        if(req.user.role == "admin"){
+            return res.json({post});
+        }
+        else {
+            return res.json("Bạn không có quyền truy cập!")
+        }
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error: ${error}`,
+        });
+    }
+}
+// Tạo function 
 export const createPost = [
     uploadImage.array("files"),
-    (req, res, next) => {
+    async (req, res, next) => {
         if (!req.body.title) {
             return res.json("Title must not be empty.")
         }
         if (!req.body.content) {
             return res.json("Content must not be empty.")
         }
+        const expired = req.body.expired;
+        if (expired < new Date().getTime() / 1000 || !expired || !new Date(expired)) {
+            req.body.expired = 4075911643;
+        }
+        if (req.body.costs == true && req.body.hideName == true) {
+            return await createPostAnonymouslyCosts(req, res, next);
+        }
+        if (req.body.costs == false && req.body.hideName == true) {
+            return await createPostAnonymously(req, res, next)
+        }
+        if (req.body.costs == true) {
+            return await createPostCosts(req, res, next)
+        }
         const post = new Post(req.body);
         post.user_id = req.user.user_id;
+        post.username = req.user.username;
         post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
         post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
         post.save(function (err) {
@@ -76,25 +167,81 @@ export const createPost = [
     }
 ]
 
-export const createPostAnonymously = [
+export const createPostCosts = [
     uploadImage.array("files"),
-    (req, res, next) => {
-        if (!req.body.title) {
-            return res.json("Title must not be empty.")
-        }
-        if (!req.body.content) {
-            return res.json("Content must not be empty.")
-        }
+    async (req, res, next) => {
         const post = new Post(req.body);
         post.user_id = req.user.user_id;
-        post.visible = 1;
+        post.username = req.user.username;
+        post.costs = true; // Phân biệt với bài post không tốn phí 
+        post.coins = req.body.coins; // Số tiền cho 1 bài post tính phí
+        post.expired = req.body.expired;
         post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
         post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
+        // check user có đủ tiền hay ko
+        const user = User.findById(req.user.user_id);
+        if (user.coins > post.coins) {
+            const coinsAfterPost = user.coins - post.coins;
+            // Thực hiện trừ tiền
+            await User.findByIdAndUpdate(
+                { _id: req.user.user_id },
+                { coins: coinsAfterPost }
+            );
+            post.save(function (err) {
+                if (err) { return next(err); }
+                return res.status(200).json(post);
+            });
+        }
+        else {
+            return res.json({ message: "Vui lòng nạp thêm tiền" });
+        }
+    }
+]
+
+export const createPostAnonymously = [
+    uploadImage.array("files"), async (req, res, next) => {
+    const post = new Post(req.body);
+    post.user_id = req.user.user_id;
+    post.username = "Anonymously";
+    post.hideName = true;
+    post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
+    post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
+    post.save(function (err) {
+        if (err) { return next(err); }
+        return res.status(200).json(post);
+    });
+}
+]
+
+export const createPostAnonymouslyCosts = [
+    uploadImage.array("files"), async (req, res, next) => {
+    const post = new Post(req.body);
+    post.user_id = req.user.user_id;
+    post.username = "Anonymously";
+    post.hideName = true;
+    post.costs = true;
+    post.coins = req.body.coins;
+    post.expired = req.body.expired;
+    post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
+    post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
+    // check user có đủ tiền hay ko
+    const user = User.findById(req.user.user_id);
+    if (user.coins > post.coins) {
+        const coinsAfterPost = user.coins - post.coins;
+        // Thực hiện trừ tiền
+        await User.findByIdAndUpdate(
+            { _id: req.user.user_id },
+            { coins: coinsAfterPost }
+        );
         post.save(function (err) {
             if (err) { return next(err); }
             return res.status(200).json(post);
         });
     }
+    else {
+        return res.json({ message: "Vui lòng nạp thêm tiền" });
+    }
+}
 ]
 
 export const editPost = [
@@ -152,11 +299,10 @@ export const vote = [
         }
         // case 2 neu query up = true
         if (up == "true") {
-            console.log("hello");
             if (post.voteups.includes(userId)) {
                 // xoa user do ra khoi array
                 await Post.findOneAndUpdate(
-                    { _id: req.params.id},
+                    { _id: req.params.id },
                     {
                         $pull: {
                             "voteups": userId
@@ -185,7 +331,7 @@ export const vote = [
                     { _id: req.params.id },
                     {
                         $pull: {
-                            "votedowns":userId
+                            "votedowns": userId
                         }
                     },
                     { returnOriginal: false }
@@ -204,28 +350,37 @@ export const vote = [
             }
         }
         const newpost = await Post.findById(postId);
-        const {votedowns,voteups} = newpost
+        const { votedowns, voteups } = newpost
         const votes = voteups.length - votedowns.length;
         await Post.findOneAndUpdate(
             { _id: req.params.id, user_id: req.user.user_id },
-            { votes : votes},
+            { votes: votes },
             { returnOriginal: false }
         );
-        return res.json(votes);
+        return res.json({ votes });
     }
 ]
 
-export const blockPost = async (req, res, next) => {
+export const blockPost = async (req, res) => {
     try {
         if (req.user.role == "admin") {
-            const { visible } = req.body;
-            const post = await Post.findOneAndUpdate(
-                { _id: req.params.id },
-                { visible },
-                { returnOriginal: false }
-            );
-            if (post)
-                return res.json({ post, message: 'Post was blocked successfully.' });
+            const postId = req.params.id;
+            const post = await Post.findByIdAndUpdate(postId);
+            if (post.blocked == true) {
+                const postUnblock = await Post.findOneAndUpdate(
+                    { _id: req.params.id },
+                    { blocked: false },
+                    { returnOriginal: false }
+                );
+                return res.json({ blocked: postUnblock.blocked, message: 'Post was unblocked successfully.' });
+            } else {
+                const postBlock = await Post.findOneAndUpdate(
+                    { _id: req.params.id },
+                    { blocked: true },
+                    { returnOriginal: false }
+                );
+                return res.json({ blocked: postBlock.blocked, message: 'Post was blocked successfully.' });
+            }
         }
         return res.status(403).json({
             message: `Cannot blocked post with id=${req.params.id}. Maybe post was not found or No permission!`,

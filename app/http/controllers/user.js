@@ -1,9 +1,11 @@
 import db from '../../models/index.model.js';
-const { User } = db;
+const { User, Post } = db;
 import sendMail from '../../../config/sendMail.js';
 import bcrypt from 'bcryptjs';
 import validator from 'express-validator';
 const { body, check, validationResult } = validator;
+import mongoose from 'mongoose';
+var ObjectId = mongoose.Types.ObjectId;
 import _ from 'lodash';
 import multer from 'multer';
 import { storageImages } from '../../../config/multer.js';
@@ -46,72 +48,87 @@ export const userValidator = [
         .exists().custom((value, { req }) => value === req.body.password),
     (req, res, next) => {
         const errors = validationResult(req);
-
         if (!errors.isEmpty()) {
-            // console.log(errors);
             return res.status(400).json({ errors: errors.array() });
         }
         next();
     }
 ]
 
-export function signup(req, res, next) {
-    User.findOne({
-        $or: [{ email: req.body.email }, { username: req.body.username }]
-    })
-        .then(result => {
-            if (result) {
-                return res.json({ success: false, message: 'Username already exists.' });
-            }
-            else {
-                code = Math.floor(Math.random() * (999999 - 100000)) + 100000;
-                var subject = "Email for verify"
-                var view = "<h2>Hello</h2><p>This is code for verify your account: " + code + " </p>";
-                sendMail(req.body.email, subject, view);
-                return res.status(200).json(req.body)
-            }
-        })
-        .catch(err => {
-            console.log(err);
-        })
-}
+// export function signup(req, res, next) {
+//     User.findOne({
+//         $or: [{ email: req.body.email }, { username: req.body.username }]
+//     })
+//         .then(result => {
+//             if (result) {
+//                 return res.json({ success: false, message: 'Username already exists.' });
+//             }
+//             else {
+//                 code = Math.floor(Math.random() * (999999 - 100000)) + 100000;
+//                 var subject = "Email for verify"
+//                 var view = "<h2>Hello</h2><p>This is code for verify your account: " + code + " </p>";
+//                 sendMail(req.body.email, subject, view);
+//                 return res.status(200).json(req.body)
+//             }
+//         })
+//         .catch(err => {
+//             console.log(err);
+//         })
+// }
 
 export const createAccount = [
     uploadImage.single("avatarP"),
     async (req, res, next) => {
-        if (req.body.code == code) {
-            bcrypt.hash(req.body.password, 10, function (err, hash) {
-                var user = new User(
-                    {
-                        username: req.body.username,
-                        email: req.body.email,
-                        password: hash,
-                        level: req.body.level,
-                        avatar: req.protocol + "://" + req.headers.host + req.file.path.replace("public", ""),
-                        role: "user"
-                    });
+        const users = User.findOne({
+            $or: [{ email: req.body.email }, { username: req.body.username }]
+        })
+        if (!users) {
+            bcrypt.hash(req.body.password, 10, (err, hash) => {
+                const user = new User(req.body);
+                user.password = hash;
+                user.avatar = req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
+                user.role = "user";
                 user.save(function (err) {
                     if (err) {
                         return next(err);
                     }
-                    var subject = "Notice of successful registrationThanks "
-                    var view = "<h2>Welcome</h2><p>You have successfully registered</p>";
-                    sendMail(req.body.email, subject, view);
-                    return res.json({ success: true, message: 'Successful created new user.' });
+                    // var subject = "Notice of successful registrationThanks "
+                    // var view = "<h2>Welcome</h2><p>You have successfully registered</p>";
+                    // sendMail(req.body.email, subject, view);
+                    next();
                 });
             })
         }
         else {
-            return res.json({ account: req.body, err: 'Incorrect code' })
+            return res.json({ success: false, message: 'Username already exists.' })
         }
-    }]
+    }
+]
 
 export const editAccount = [
     uploadImage.single("avatarP"),
     async (req, res) => {
         try {
-            const data = req.body;
-            data.avatar = req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
+            const {avatar, address, phone, payment_id, description, level} = req.body;
+            let data = {};
+            if(avatar){
+                data.avatar = req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
+            }
+            if(address){
+                data.address = req.body.address;
+            }
+            if(phone){
+                data.address = req.body.phone;
+            }
+            if(payment_id){
+                data.address = req.body.payment_id;
+            }
+            if(description){
+                data.address = req.body.description;
+            }
+            if(level){
+                data.address = req.body.level;
+            }
             const user = await User.findOneAndUpdate(
                 { _id: req.params.id, user_id: req.user.user_id },
                 data,
@@ -178,14 +195,23 @@ export function updatePassword(req, res, next) {
 export const blockUser = async (req, res, next) => {
     try {
         if (req.user.role == "admin") {
-            const { visible } = req.body;
-            const user = await User.findOneAndUpdate(
-                { _id: req.params.id },
-                { visible },
-                { returnOriginal: false }
-            );
-            if (user)
-                return res.json({ user, message: 'User was blocked successfully.' });
+            const userId = req.params.id;
+            const user = await User.findById(userId);
+            if (user.blocked == true) {
+                const userUnblock = await User.findOneAndUpdate(
+                    { _id: req.params.id },
+                    { blocked: false },
+                    { returnOriginal: false }
+                );
+                return res.json({ blocked: userUnblock.blocked, message: 'User was unblocked successfully.' });
+            } else {
+                const userBlock = await User.findOneAndUpdate(
+                    { _id: req.params.id },
+                    { blocked: true },
+                    { returnOriginal: false }
+                );
+                return res.json({ blocked: userBlock.blocked, message: 'User was blocked successfully.' });
+            }
         }
         return res.status(403).json({
             message: `Cannot blocked user with id=${req.params.id}. Maybe user was not found or No permission!`,
@@ -196,3 +222,32 @@ export const blockUser = async (req, res, next) => {
         });
     }
 }
+
+export async function markCorrectAnswer(req, res) {
+    try {
+        const commentId = new ObjectId(req.params.commentId);
+        const post = await Post.findOneAndUpdate(
+            { _id: req.params.id, user_id: req.user.user_id, "comments._id": commentId },
+            {
+                $set: {
+                    "comments.$.correct": true,
+                }
+            },
+            { passRawResult: true, returnOriginal: false }
+        );
+        if (_.find(post.comments, { _id: commentId, comment: req.body.comment }))
+            return res.json({ posts, message: 'Comment successfully.' });
+        return res.status(403).json({
+            message: `Cannot Comment with id=${req.params.id}. Maybe post was not found or No permission!`,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error: ${error}`,
+        });
+    }
+}
+
+
+//Nạp coins
+
+//Rút coins
