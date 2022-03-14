@@ -45,7 +45,7 @@ import auth from './auth.js';
   router.post('/user/:id/block', verifyToken, userController.blockUser);
 
 // Quên mật khẩu
-  router.get('/sendmail_forget',
+  router.get('/sendmailForget',
     function (req, res) {
       res.json({ message: "Sended" });
     });
