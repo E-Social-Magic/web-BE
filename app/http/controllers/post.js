@@ -119,9 +119,9 @@ export const detailPost = async (req, res) => {
 
 export const detailPostForAd = async (req, res) => {
     try {
-        const post = await Post.findOne({_id: req.params.id});
-        if(req.user.role == "admin"){
-            return res.json({post});
+        const post = await Post.findOne({ _id: req.params.id });
+        if (req.user.role == "admin") {
+            return res.json({ post });
         }
         else {
             return res.json("Bạn không có quyền truy cập!")
@@ -146,43 +146,45 @@ export const createPost = [
         if (expired < new Date().getTime() / 1000 || !expired || !new Date(expired)) {
             req.body.expired = 4075911643;
         }
-        if (req.body.costs == true && req.body.hideName == true) {
+        if (req.body.costs == "true" && req.body.hideName == "true") {
             return await createPostAnonymouslyCosts(req, res, next);
         }
-        if (req.body.costs == false && req.body.hideName == true) {
-            return await createPostAnonymously(req, res, next)
+        if (req.body.costs == "false" && req.body.hideName == "true") {
+            return await createPostAnonymously(req, res, next);
         }
-        if (req.body.costs == true) {
-            return await createPostCosts(req, res, next)
+        if (req.body.costs == "true") {
+            return await createPostCosts(req, res, next);
         }
-        const post = new Post(req.body);
-        post.user_id = req.user.user_id;
-        post.username = req.user.username;
-        post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
-        post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
-        post.save(function (err) {
-            if (err) { return next(err); }
-            return res.status(200).json(post);
-        });
+        else {
+            const post = new Post(req.body);
+            post.user_id = req.user.user_id;
+            post.username = req.user.username;
+            post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
+            post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
+            post.save(function (err) {
+                if (err) { return next(err); }
+                return res.status(200).json(post);
+            });
+        }
     }
 ]
 
-export const createPostCosts = [
-    uploadImage.array("files"),
-    async (req, res, next) => {
-        const post = new Post(req.body);
-        post.user_id = req.user.user_id;
-        post.username = req.user.username;
-        post.costs = true; // Phân biệt với bài post không tốn phí 
-        post.coins = req.body.coins; // Số tiền cho 1 bài post tính phí
-        post.expired = req.body.expired;
-        post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
-        post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
-        // check user có đủ tiền hay ko
-        const user = User.findById(req.user.user_id);
-        if (user.coins > post.coins) {
+export const createPostCosts = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.user_id);
+        if (user.coins < req.body.coins) {
+            return res.json({ message: "Vui lòng nạp thêm tiền" });
+        }
+        else {
+            const post = new Post(req.body);
+            post.user_id = req.user.user_id;
+            post.username = req.user.username;
+            post.costs = true;
+            post.coins = req.body.coins;
+            post.expired = req.body.expired;
+            post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
+            post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
             const coinsAfterPost = user.coins - post.coins;
-            // Thực hiện trừ tiền
             await User.findByIdAndUpdate(
                 { _id: req.user.user_id },
                 { coins: coinsAfterPost }
@@ -192,14 +194,14 @@ export const createPostCosts = [
                 return res.status(200).json(post);
             });
         }
-        else {
-            return res.json({ message: "Vui lòng nạp thêm tiền" });
-        }
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error: ${error}`,
+        });
     }
-]
+}
 
-export const createPostAnonymously = [
-    uploadImage.array("files"), async (req, res, next) => {
+export const createPostAnonymously = async (req, res, next) => {
     const post = new Post(req.body);
     post.user_id = req.user.user_id;
     post.username = "Anonymously";
@@ -211,38 +213,39 @@ export const createPostAnonymously = [
         return res.status(200).json(post);
     });
 }
-]
 
-export const createPostAnonymouslyCosts = [
-    uploadImage.array("files"), async (req, res, next) => {
-    const post = new Post(req.body);
-    post.user_id = req.user.user_id;
-    post.username = "Anonymously";
-    post.hideName = true;
-    post.costs = true;
-    post.coins = req.body.coins;
-    post.expired = req.body.expired;
-    post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
-    post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
-    // check user có đủ tiền hay ko
-    const user = User.findById(req.user.user_id);
-    if (user.coins > post.coins) {
-        const coinsAfterPost = user.coins - post.coins;
-        // Thực hiện trừ tiền
-        await User.findByIdAndUpdate(
-            { _id: req.user.user_id },
-            { coins: coinsAfterPost }
-        );
-        post.save(function (err) {
-            if (err) { return next(err); }
-            return res.status(200).json(post);
+export const createPostAnonymouslyCosts = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.user_id);
+        if (user.coins < req.body.coins) {
+            return res.json({ message: "Vui lòng nạp thêm tiền" });
+        }
+        else {
+            const post = new Post(req.body);
+            post.user_id = req.user.user_id;
+            post.username = "Anonymously";
+            post.hideName = true;
+            post.costs = true;
+            post.coins = req.body.coins;
+            post.expired = req.body.expired;
+            post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
+            post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
+            const coinsAfterPost = user.coins - post.coins;
+            await User.findByIdAndUpdate(
+                { _id: req.user.user_id },
+                { coins: coinsAfterPost }
+            );
+            post.save(function (err) {
+                if (err) { return next(err); }
+                return res.status(200).json(post);
+            });
+        }
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error: ${error}`,
         });
     }
-    else {
-        return res.json({ message: "Vui lòng nạp thêm tiền" });
-    }
 }
-]
 
 export const editPost = [
     uploadImage.array("files"),
