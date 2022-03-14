@@ -39,7 +39,8 @@ import auth from './auth.js';
     });
 
 // User
-  router.get('/user/info', [userController.info]);
+  router.get('/user/info', [userController.userInfo]);
+  router.get('/user/:id/info', verifyToken, [userController.userInfoForAd]);
   router.get('/users', verifyToken, [userController.getAllUser]);
   router.post('/user/:id/edit', verifyToken, userController.editAccount);
   router.post('/user/:id/block', verifyToken, userController.blockUser);

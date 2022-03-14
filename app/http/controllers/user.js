@@ -29,9 +29,17 @@ export async function getAllUser(req, res) {
     return res.status(403).json({ success: false, message: "No permission!" });
 }
 
-export function info(req, res) {
+export function userInfo(req, res) {
     const { password, ...user } = req.user._doc;
     return res.json(user);
+};
+
+export function userInfoForAd(req, res) {
+    if (req.user.role == "admin") {
+        const user = await User.findOne({_id: req.params.id}, { password: 0 })
+        return res.json({ user: user });
+    }
+    return res.status(403).json({ success: false, message: "No permission!" });
 };
 
 export const userValidator = [
