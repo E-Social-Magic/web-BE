@@ -22,12 +22,12 @@ router.post('/login', async (req, res) => {
     if (!(username && password)) {
       return res.status(HTTPStatus.BAD_REQUEST).send({
         message:
-          'All input is required. Please input username, password,email'
+          'Vui lòng không để trống thông tin đăng nhập! Bao gồm Username và Password!'
       });
     }
     const oldUser = await User.findOne({ username });
     if (oldUser && (await bcrypt.compare(password, oldUser.password))) {
-      if(oldUser.visible == -1){
+      if(oldUser.blocked == true){
         return res.status(HTTPStatus.OK).json({message:"Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với Quản trị viên để biết thêm thông tin"});
       }
       const token = jwt.sign({ user_id: oldUser._id, username, role:oldUser.role }, TOKEN_KEY, {
@@ -38,7 +38,7 @@ router.post('/login', async (req, res) => {
       
       return res.status(HTTPStatus.OK).json({email,username,name,subjects,role,createdAt,updatedAt,id,token});
     } 
-    return res.status(HTTPStatus.OK).json({message:"User name or password not correct"});
+    return res.status(HTTPStatus.OK).json({message:"Thông tin đăng nhập không chính xác! Hãy kiểm tra lại Username hoặc Password"});
   } catch (err) {
     return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).json(err.message);
   }

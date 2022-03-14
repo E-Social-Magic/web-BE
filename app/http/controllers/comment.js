@@ -1,8 +1,6 @@
 import db from '../../models/index.model.js';
 const { Post, User } = db;
 import mongoose from 'mongoose';
-var Schema = mongoose.Schema;
-var ObjectIdSchema = Schema.ObjectId;
 var ObjectId = mongoose.Types.ObjectId;
 import _ from 'lodash';
 import multer from 'multer';
@@ -29,7 +27,8 @@ export const createComment = [
                             _id: new ObjectId(),
                             comment: req.body.comment,
                             user_id: req.user,
-                            images: req.files.map((file) => file.path)
+                            correct: false,
+                            images: req.files.map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""))
                         }
                     }
                 },
@@ -53,7 +52,7 @@ export async function editComment(req, res) {
     try {
         const commentID = new ObjectId(req.params.commentId);
         const posts = await Post.findOneAndUpdate(
-            { _id: req.params.id, "comments.user_id": req.user, "comments._id": commentID },
+            { _id: req.params.id, "comments.user_id": req.user.user_id, "comments._id": commentID },
             {
                 $set: {
                     "comments.$.comment": req.body.comment,
