@@ -1,7 +1,6 @@
 import db from '../../models/index.model.js';
 const { Private_data } = db;
 import { check, body, validationResult } from 'express-validator';
-import storage from 'node-persist';
 
 export function listPrivateData(req, res) {
     Private_data.find({}, col, (err, private_datas) => {

@@ -2,6 +2,8 @@ import db from '../../models/index.model.js';
 const { User, Post } = db;
 import sendMail from '../../../config/sendMail.js';
 import bcrypt from 'bcryptjs';
+import fs from 'fs';
+import Canvas from "canvas";
 import validator from 'express-validator';
 const { body, check, validationResult } = validator;
 import mongoose from 'mongoose';
@@ -9,6 +11,8 @@ var ObjectId = mongoose.Types.ObjectId;
 import _ from 'lodash';
 import multer from 'multer';
 import { storageImages } from '../../../config/multer.js';
+var code;
+
 const uploadImage = multer({
     storage: storageImages,
     fileFilter: (req, file, cb) => {
@@ -19,7 +23,30 @@ const uploadImage = multer({
         }
     }
 });
-var code;
+
+export function generateAvatar(text, backgroundColor) {
+    const canvas = Canvas.createCanvas(200, 200);
+    const context = canvas.getContext("2d");
+
+    canvas.width = 200;
+    canvas.height = 200;
+
+    // Draw background
+    context.fillStyle = backgroundColor;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw text
+    context.font = "bold 100px Sans";
+    context.fillStyle = "white";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    const buffer = canvas.toBuffer('image/png');
+    const nameImage = './public/uploads/avatarP' + '-' + Date.now() + '.png';
+    fs.writeFileSync(nameImage, buffer);
+    return nameImage;
+}
 
 export async function getAllUser(req, res) {
     if (req.user.role == "admin") {
@@ -34,9 +61,9 @@ export function userInfo(req, res) {
     return res.json(user);
 };
 
-export function userInfoForAd(req, res) {
+export const userInfoForAd = async (req, res) => {
     if (req.user.role == "admin") {
-        const user = await User.findOne({_id: req.params.id}, { password: 0 })
+        const user = await User.findOne({ _id: req.params.id }, { password: 0 })
         return res.json({ user: user });
     }
     return res.status(403).json({ success: false, message: "No permission!" });
@@ -87,29 +114,42 @@ export const userValidator = [
 export const createAccount = [
     uploadImage.single("avatarP"),
     async (req, res, next) => {
-        const users = User.findOne({
-            $or: [{ email: req.body.email }, { username: req.body.username }]
-        })
-        if (!users) {
-            bcrypt.hash(req.body.password, 10, (err, hash) => {
-                const user = new User(req.body);
-                user.password = hash;
-                user.avatar = req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
-                user.role = "user";
-                user.save(function (err) {
-                    if (err) {
-                        return next(err);
+        try {
+            const users = await User.findOne({
+                $or: [{ email: req.body.email }, { username: req.body.username }]
+            });
+            if (users) {
+                return res.json({ success: false, message: 'Username already exists.' })
+            }
+            else {
+                bcrypt.hash(req.body.password, 10, (err, hash) => {
+                    const user = new User(req.body);
+                    user.password = hash;
+                    if (req.file) {
+                        user.avatar = req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
                     }
-                    // var subject = "Notice of successful registrationThanks "
-                    // var view = "<h2>Welcome</h2><p>You have successfully registered</p>";
-                    // sendMail(req.body.email, subject, view);
-                    next();
-                });
-            })
+                    else {
+                        user.avatar = req.protocol + "://" + req.headers.host + generateAvatar("A", "#009578").replace("./public","");
+                    }
+                    user.role = "user";
+                    user.save(function (err) {
+                        if (err) {
+                            return next(err);
+                        }
+                        // var subject = "Notice of successful registrationThanks "
+                        // var view = "<h2>Welcome</h2><p>You have successfully registered</p>";
+                        // sendMail(req.body.email, subject, view);
+                        return next();
+                        // return res.json({ success: true, message: 'Oke' })
+                    });
+                })
+            }
+        } catch (error) {
+            return res.status(500).json({
+                message: `Error: ${error}`,
+            });
         }
-        else {
-            return res.json({ success: false, message: 'Username already exists.' })
-        }
+
     }
 ]
 
@@ -117,24 +157,24 @@ export const editAccount = [
     uploadImage.single("avatarP"),
     async (req, res) => {
         try {
-            const {avatar, address, phone, payment_id, description, level} = req.body;
+            const { avatar, address, phone, payment_id, description, level } = req.body;
             let data = {};
-            if(avatar){
+            if (avatar) {
                 data.avatar = req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
             }
-            if(address){
+            if (address) {
                 data.address = req.body.address;
             }
-            if(phone){
+            if (phone) {
                 data.address = req.body.phone;
             }
-            if(payment_id){
+            if (payment_id) {
                 data.address = req.body.payment_id;
             }
-            if(description){
+            if (description) {
                 data.address = req.body.description;
             }
-            if(level){
+            if (level) {
                 data.address = req.body.level;
             }
             const user = await User.findOneAndUpdate(
