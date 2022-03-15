@@ -293,7 +293,6 @@ export const vote = [
         const postId = req.params.id;
         const up = req.query.up;
         const down = req.query.down;
-        console.log(up);
         // case 1 neu query up =true
         const post = await Post.findById(postId);
         //case 1 thiếu query
@@ -353,10 +352,10 @@ export const vote = [
             }
         }
         const newpost = await Post.findById(postId);
-        const { votedowns, voteups } = newpost
+        const { votedowns, voteups } = newpost;
         const votes = voteups.length - votedowns.length;
         await Post.findOneAndUpdate(
-            { _id: req.params.id, user_id: req.user.user_id },
+            { _id: req.params.id },
             { votes: votes },
             { returnOriginal: false }
         );

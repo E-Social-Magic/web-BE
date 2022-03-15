@@ -249,20 +249,31 @@ export const blockUser = async (req, res, next) => {
 export async function markCorrectAnswer(req, res) {
     try {
         const commentId = new ObjectId(req.params.commentId);
-        const post = await Post.findOneAndUpdate(
-            { _id: req.params.id, user_id: req.user.user_id, "comments._id": commentId },
-            {
-                $set: {
-                    "comments.$.correct": true,
-                }
-            },
-            { passRawResult: true, returnOriginal: false }
-        );
-        if (_.find(post.comments, { _id: commentId, comment: req.body.comment }))
-            return res.json({ posts, message: 'Comment successfully.' });
-        return res.status(403).json({
-            message: `Cannot Comment with id=${req.params.id}. Maybe post was not found or No permission!`,
+        const checkCorrect = await Post.findOne({
+            _id: req.params.id, 
+            "comments.user_id": req.user.user_id,
+            "comments.correct": true,
+            costs: true
         });
+        if(checkCorrect){
+            return res.json({message: "Đã đánh dấu 1 câu trả lời đúng trước đó!"})
+        }
+        else{
+            const post = await Post.findOneAndUpdate(
+                { _id: req.params.id, user_id: req.user.user_id, "comments._id": commentId },
+                {
+                    $set: {
+                        "comments.$.correct": true,
+                    }
+                },
+                { passRawResult: true, returnOriginal: false }
+            );
+            if (_.find(post.comments, { _id: commentId, comment: req.body.comment }))
+                return res.json({ post, message: 'Mark correct successfully.' });
+            return res.status(403).json({
+                message: `Cannot mark correct with id=${req.params.id}. Maybe post was not found or No permission!`,
+            });
+        }
     } catch (error) {
         return res.status(500).json({
             message: `Error: ${error}`,
