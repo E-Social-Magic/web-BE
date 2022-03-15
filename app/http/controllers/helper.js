@@ -29,12 +29,18 @@ export const transfers = async (req, res) => {
             );
             await Post.findByIdAndUpdate(
                 { _id: req.params.id },
+<<<<<<< HEAD
                 { coins: 0 }
             )
             return res.json({ coinsPost: post.coins, coinsHelper: user.coins })
+=======
+                { costs: false }
+            )
+            return res.json({ coinsPost: post.coins, coinsHelper: user.coins, coinsOfOwner: coinsOfOwner })
+>>>>>>> helper
         }
         return res.status(403).json({
-            message: `Cannot update user with id=${req.params.id}. Maybe user was not found or No permission!`,
+            message: `Không thể nhận tiền từ bài post có id=${req.params.id}. Có thể bạn đã nhận tiền rồi hoặc bạn không phải người trả lời đúng!`,
         });
     } catch (error) {
         return res.status(500).json({

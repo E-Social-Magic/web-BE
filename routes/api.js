@@ -39,7 +39,7 @@ import auth from './auth.js';
     });
 
 // User
-  router.get('/user/info', [userController.userInfo]);
+  router.get('/user/info', verifyToken, [userController.userInfo]);
   router.get('/user/:id/info', verifyToken, [userController.userInfoForAd]);
   router.get('/users', verifyToken, [userController.getAllUser]);
   router.post('/user/:id/edit', verifyToken, userController.editAccount);
@@ -74,6 +74,10 @@ import auth from './auth.js';
 // Comment
   router.put('/post/:id/comment', verifyToken, commentController.createComment);
   router.put('/post/:id/comment/:commentId/edit', verifyToken, commentController.editComment);
+<<<<<<< HEAD
+=======
+  router.put('/post/:id/comment/:commentId/transfer', verifyToken, helperController.transfers);
+>>>>>>> helper
   router.put('/post/:id/comment/:commentId/markCorrect', verifyToken, userController.markCorrectAnswer);
   router.delete('/post/:id/comment/:commentId', verifyToken, commentController.deleteComment);
 
