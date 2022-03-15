@@ -19,6 +19,10 @@ export const createComment = [
     uploadImage.array("files"),
     async (req, res) => {
         try {
+            var images = "";
+            if(req.files){
+                images = req.files.map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""))
+            }
             const post = await Post.findOneAndUpdate(
                 { _id: req.params.id },
                 {
@@ -26,9 +30,10 @@ export const createComment = [
                         comments: {
                             _id: new ObjectId(),
                             comment: req.body.comment,
-                            user_id: req.user,
+                            user_id: req.user.user_id,
+                            username: req.user.username,
                             correct: false,
-                            images: req.files.map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""))
+                            images: images
                         }
                     }
                 },
@@ -76,14 +81,14 @@ export async function deleteComment(req, res) {
     try {
         const commentID = new ObjectId(req.params.commentId);
         const post = await Post.findOneAndUpdate(
-            { _id: req.params.id, user_id: req.user },
+            { _id: req.params.id, "comments.user_id": req.user.user_id },
             { $pull: { "comments": {_id: commentID}}},
             { returnOriginal: false }
         );
         if (post)
             return res.json({ post, message: 'Delete successfully.' });
         return res.status(403).json({
-            message: `Cannot Comment with id=${commentID}. Maybe post was not found or No permission!`,
+            message: `Cannot delete comment with id=${commentID}. Maybe post was not found or No permission!`,
         });
     } catch (error) {
         return res.status(500).json({

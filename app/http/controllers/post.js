@@ -132,6 +132,13 @@ export const detailPostForAd = async (req, res) => {
         });
     }
 }
+
+export const checkExpired = async () => {
+    return await Post.updateMany(
+        { expired: { $lt: new Date().getTime() / 1000 } },
+        { private: true }
+    );
+}
 // Tạo function 
 export const createPost = [
     uploadImage.array("files"),
@@ -163,8 +170,8 @@ export const createPost = [
             post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
             post.save(function (err) {
                 if (err) { return next(err); }
-                return res.status(200).json(post);
             });
+            return res.status(200).json(post);
         }
     }
 ]
@@ -293,7 +300,6 @@ export const vote = [
         const postId = req.params.id;
         const up = req.query.up;
         const down = req.query.down;
-        console.log(up);
         // case 1 neu query up =true
         const post = await Post.findById(postId);
         //case 1 thiếu query
@@ -353,10 +359,10 @@ export const vote = [
             }
         }
         const newpost = await Post.findById(postId);
-        const { votedowns, voteups } = newpost
+        const { votedowns, voteups } = newpost;
         const votes = voteups.length - votedowns.length;
         await Post.findOneAndUpdate(
-            { _id: req.params.id, user_id: req.user.user_id },
+            { _id: req.params.id },
             { votes: votes },
             { returnOriginal: false }
         );

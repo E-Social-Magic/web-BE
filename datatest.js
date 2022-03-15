@@ -15,12 +15,13 @@ var users = []
 var posts = []
 var groups = []
 
-function userCreate(username, password, email, cb) {
+function userCreate(username, password, email, avatar, cb) {
     bcrypt.hash(password, 10, (err, hash) => {
         var user = new User({
             username: username,
             password: hash,
             email: email,
+            avatar: avatar,
             role: "user"
         });
 
@@ -35,8 +36,8 @@ function userCreate(username, password, email, cb) {
     });
 }
 
-function postCreate(title, content, user_id, cb) {
-    var post = new Post({ title: title, content: content, user_id: user_id });
+function postCreate(title, content, user_id, username, cb) {
+    var post = new Post({ title: title, content: content, user_id: user_id, username: username });
     post.save(function (err) {
         if (err) {
             cb(err, null);
@@ -66,13 +67,13 @@ function groupCreate(group_name, subject, image, cb) {
 function createGroupAuthors(cb) {
     async.series([
         function (callback) {
-            userCreate('account1', '123456', 'tojro206@gmail.com', callback);
+            userCreate('Tanjiro', '123456', 'tojro1@gmail.com', 'https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/f/f9/Tanjiro_Anime_Profile.png/revision/latest/scale-to-width-down/98?cb=20191224040903', callback);
         },
         function (callback) {
-            userCreate('account2', '123456', 'tojro206@gmail.com', callback);
+            userCreate('Inosuke', '123456', 'tojro2@gmail.com', 'https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/4/46/Zenitsu_Anime_Profile.png/revision/latest/scale-to-width-down/98?cb=20191125204606', callback);
         },
         function (callback) {
-            userCreate('account3', '123456', "tojro206@gmail.com", callback);
+            userCreate('Zenitsu', '123456', "tojro3@gmail.com", 'https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/c/c2/Inosuke_Anime_Profile.png/revision/latest/scale-to-width-down/98?cb=20191125204712', callback);
         },
         function (callback) {
             groupCreate("Toán", "Toán", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646899596146.jpg", callback);
@@ -114,9 +115,6 @@ function createGroupAuthors(cb) {
             groupCreate("Mỹ thuật", "Mỹ thuật", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646900214148.png", callback);
         },
         function (callback) {
-            groupCreate("Chính trị", "Chính trị", "", callback);
-        },
-        function (callback) {
             groupCreate("Tin Học", "Tin học", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646900307612.png", callback);
         },
     ],
@@ -126,28 +124,28 @@ function createGroupAuthors(cb) {
 function createPosts(cb) {
     async.parallel([
         function (callback) {
-            postCreate('Toán', '(a^2 + b^2) = ?', users[0]._id, callback);
+            postCreate('Toán', '(a^2 + b^2) = ?', users[0]._id, users[0].username, callback);
         },
         function (callback) {
-            postCreate('Anh', 'Hello = ?', users[2]._id, callback);
+            postCreate('Anh', 'Hello = ?', users[2]._id, users[2].username, callback);
         },
         function (callback) {
-            postCreate('Toán', '1dm = ?cm', users[1]._id, callback);
+            postCreate('Toán', '1dm = ?cm', users[1]._id, users[1].username, callback);
         },
         function (callback) {
-            postCreate('Toán', '1km = ?m', users[0]._id, callback);
+            postCreate('Toán', '1km = ?m', users[0]._id, users[0].username, callback);
         },
         function (callback) {
-            postCreate('Toán', '(a^2 - b^2) = ?', users[2]._id, callback);
+            postCreate('Toán', '(a^2 - b^2) = ?', users[2]._id, users[2].username, callback);
         },
         function (callback) {
-            postCreate('Anh', 'What là gì?', users[1]._id, callback);
+            postCreate('Anh', 'What là gì?', users[1]._id, users[1].username, callback);
         },
         function (callback) {
-            postCreate('Anh', 'Khi nào dùng When?', users[0]._id, callback);
+            postCreate('Anh', 'Khi nào dùng When?', users[0]._id, users[0].username, callback);
         },
         function (callback) {
-            postCreate('Sử', 'Ngày thành lập đảng là ngày bao nhiêu?', users[2]._id, callback);
+            postCreate('Sử', 'Ngày thành lập đảng là ngày bao nhiêu?', users[2]._id, users[2].username, callback);
         },
     ],
         cb);
