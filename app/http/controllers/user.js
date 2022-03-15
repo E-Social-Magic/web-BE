@@ -91,7 +91,7 @@ export const createAccount = [
     async (req, res, next) => {
         try {
             const users = await User.findOne({
-                $or: [{ email: req.body.email }, { username: req.body.username }]
+                email: req.body.email
             });
             if (users) {
                 return res.json({ success: false, message: 'Username already exists.' })
@@ -105,7 +105,7 @@ export const createAccount = [
                     }
                     else {
                         var uppercaseFirstLetter = req.body.username.charAt(0).toUpperCase();
-                        user.avatar = req.protocol + "://" + req.headers.host + generateAvatar(uppercaseFirstLetter).replace("./public","");
+                        user.avatar = req.protocol + "://" + req.headers.host + generateAvatar(uppercaseFirstLetter, "avatarP").replace("./public","");
                     }
                     user.role = "user";
                     user.save(function (err) {
@@ -115,8 +115,7 @@ export const createAccount = [
                         // var subject = "Notice of successful registrationThanks "
                         // var view = "<h2>Welcome</h2><p>You have successfully registered</p>";
                         // sendMail(req.body.email, subject, view);
-                        return next();
-                        // return res.json({ success: true, message: 'Oke' })
+                        return res.json({ success: true, message: 'Đăng ký thành công!' })
                     });
                 })
             }

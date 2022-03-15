@@ -10,8 +10,9 @@ export function generateColor(){
     }
     return color;
 }
-export function generateAvatar(text) {
+export function generateAvatar(text, fieldName) {
     const canvas = Canvas.createCanvas(200, 200);
+    
     const context = canvas.getContext("2d");
     const backgroundColor = generateColor();
     canvas.width = 200;
@@ -29,7 +30,7 @@ export function generateAvatar(text) {
     context.fillText(text, canvas.width / 2, canvas.height / 2);
 
     const buffer = canvas.toBuffer('image/png');
-    const nameImage = './public/uploads/avatarP' + '-' + Date.now() + '.png';
+    const nameImage = './public/uploads/' + fieldName + '-' + Date.now() + '.png';
     fs.writeFileSync(nameImage, buffer);
     return nameImage;
 }

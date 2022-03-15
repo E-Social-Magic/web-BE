@@ -3,13 +3,14 @@ const { Group } = db;
 import _ from 'lodash';
 import multer from 'multer';
 import { storageImages } from '../../../config/multer.js';
+import { generateAvatar } from './generator.js';
 const uploadImage = multer({
     storage: storageImages,
     fileFilter: (req, file, cb) => {
         if ((file.mimetype).includes('jfif') || (file.mimetype).includes('jpeg') || (file.mimetype).includes('png') || (file.mimetype).includes('jpg')) {
-          cb(null, true);
+            cb(null, true);
         } else {
-          cb(null, false);
+            cb(null, false);
         }
     }
 });
@@ -61,7 +62,13 @@ export const createGroup = [
             return res.json("Subject must not be empty.")
         }
         const group = new Group(req.body);
-        group.avatar =  req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
+        if (req.file) {
+            group.avatar = req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
+        }
+        else {
+            var uppercaseFirstLetter = req.body.group_name.charAt(0).toUpperCase();
+            group.avatar = req.protocol + "://" + req.headers.host + generateAvatar(uppercaseFirstLetter, "avatarG").replace("./public", "");
+        }
         group.save(function (err) {
             if (err) { return next(err); }
             return res.status(200).json(group);

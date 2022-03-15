@@ -16,7 +16,7 @@ import auth from './auth.js';
     function (req, res, next) {
       res.json({ title: "Create Account", message: "Get UI for Create Account" });
     });
-  router.post('/signup', userController.userValidator, userController.createAccount, auth);
+  router.post('/signup', userController.userValidator, userController.createAccount);
   // router.post('/signup', userController.signup);
 
 // Đăng nhập 

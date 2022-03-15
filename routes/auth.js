@@ -18,25 +18,25 @@ router.use(
 
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    if (!(username && password)) {
+    const { email, password } = req.body;
+    if (!(email && password)) {
       return res.status(HTTPStatus.BAD_REQUEST).send({
         message:
-          'Vui lòng không để trống thông tin đăng nhập! Bao gồm Username và Password!'
+          'Vui lòng không để trống thông tin đăng nhập! Bao gồm Email và Password!'
       });
     }
-    const oldUser = await User.findOne({ username });
+    const oldUser = await User.findOne({ email });
     if (oldUser && (await bcrypt.compare(password, oldUser.password))) {
       if(oldUser.blocked == true){
         return res.status(HTTPStatus.OK).json({message:"Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với Quản trị viên để biết thêm thông tin"});
       }
-      const token = jwt.sign({ user_id: oldUser._id, username, role:oldUser.role }, TOKEN_KEY, {
+      const token = jwt.sign({ user_id: oldUser._id, username: oldUser.username, role:oldUser.role }, TOKEN_KEY, {
         algorithm: 'HS384',
         expiresIn: '2h',
       });
-      const {email,name,subjects,role,createdAt,updatedAt,id}= oldUser
+      const {username,role,createdAt,updatedAt,id}= oldUser
       
-      return res.status(HTTPStatus.OK).json({email,username,name,subjects,role,createdAt,updatedAt,id,token});
+      return res.status(HTTPStatus.OK).json({email,username,role,id,token});
     } 
     return res.status(HTTPStatus.OK).json({message:"Thông tin đăng nhập không chính xác! Hãy kiểm tra lại Username hoặc Password"});
   } catch (err) {
