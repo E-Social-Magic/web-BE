@@ -251,11 +251,7 @@ export async function markCorrectAnswer(req, res) {
         const commentId = new ObjectId(req.params.commentId);
         const checkCorrect = await Post.findOne({
             _id: req.params.id, 
-<<<<<<< HEAD
-            "comments.user_id": req.user.user_id,
-=======
             user_id: req.user.user_id, // Chủ bài viết 
->>>>>>> helper
             "comments.correct": true,
             costs: true
         });
@@ -264,11 +260,7 @@ export async function markCorrectAnswer(req, res) {
         }
         else{
             const post = await Post.findOneAndUpdate(
-<<<<<<< HEAD
-                { _id: req.params.id, user_id: req.user.user_id, "comments._id": commentId },
-=======
                 { "comments._id": commentId },
->>>>>>> helper
                 {
                     $set: {
                         "comments.$.correct": true,
@@ -276,9 +268,6 @@ export async function markCorrectAnswer(req, res) {
                 },
                 { passRawResult: true, returnOriginal: false }
             );
-<<<<<<< HEAD
-            if (_.find(post.comments, { _id: commentId, comment: req.body.comment }))
-=======
             const {user_id}= post.comments.find(v=>v.correct==true);
             const user = await User.findById({ _id: user_id });
             const coinsOfOwner = (10/100)* post.coins;
@@ -292,7 +281,6 @@ export async function markCorrectAnswer(req, res) {
                 { coins: coinsOfOwner }
             );
             if (post)
->>>>>>> helper
                 return res.json({ post, message: 'Mark correct successfully.' });
             return res.status(403).json({
                 message: `Cannot mark correct with id=${req.params.id}. Maybe post was not found or No permission!`,
