@@ -5,6 +5,7 @@ const { Post, User, Group } = db;
 import async from "async";
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
+import { generateAvatar } from './app/http/controllers/generator.js';
 var mongoDB = userArgs[0];
 mongoose.connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.Promise = global.Promise;
@@ -22,7 +23,7 @@ function userCreate(username, password, email, avatar, cb) {
             password: hash,
             email: email,
             avatar: avatar,
-            role: "user"
+            role: "user",
         });
 
         user.save(function (err) {
@@ -49,10 +50,16 @@ function postCreate(title, content, user_id, username, cb) {
 }
 
 function groupCreate(group_name, subject, image, cb) {
+    const listUsers = [users[0]._id,users[2]._id,users[1]._id];
+    if(image == ""){
+        var uppercaseFirstLetter = group_name.charAt(0).toUpperCase();
+        image = "http://web-be-brmc9.ondigitalocean.app" + generateAvatar(uppercaseFirstLetter, "avatarG").replace("./public", "");
+    }
     var group = new Group({
         group_name: group_name,
         subject: subject,
-        avatar: image
+        avatar: image,
+        user_id: listUsers
     });
     group.save(function (err) {
         if (err) {
@@ -76,46 +83,46 @@ function createGroupAuthors(cb) {
             userCreate('Zenitsu', '123456', "tojro3@gmail.com", 'https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/c/c2/Inosuke_Anime_Profile.png/revision/latest/scale-to-width-down/98?cb=20191125204712', callback);
         },
         function (callback) {
-            groupCreate("Toán", "Toán", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646899596146.jpg", callback);
+            groupCreate("Toán", "Toán", "", callback);
         },
         function (callback) {
-            groupCreate("Văn", "Văn", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646900546116.png", callback);
+            groupCreate("Văn", "Văn", "", callback);
         },
         function (callback) {
-            groupCreate("Anh", "Anh", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646900373484.png", callback);
+            groupCreate("Anh", "Anh", "", callback);
         },
         function (callback) {
-            groupCreate("Lí", "Lí", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646899690171.jpg", callback);
+            groupCreate("Lí", "Lí", "", callback);
         },
         function (callback) {
-            groupCreate("Hóa", "Hóa", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646899626002.jpg", callback);
+            groupCreate("Hóa", "Hóa", "", callback);
         },
         function (callback) {
-            groupCreate("Sinh", "Sinh", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646899657602.jpg", callback);
+            groupCreate("Sinh", "Sinh", "", callback);
         },
         function (callback) {
-            groupCreate("Sử", "Sử", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646899714914.jpg", callback);
+            groupCreate("Sử", "Sử", "", callback);
         },
         function (callback) {
-            groupCreate("Địa", "Địa", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646899739205.jpg", callback);
+            groupCreate("Địa", "Địa", "", callback);
         },
         function (callback) {
-            groupCreate("GDCD", "GDCD", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646900601929.png", callback);
+            groupCreate("GDCD", "GDCD", "", callback);
         },
         function (callback) {
-            groupCreate("GDQP", "GDQP", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646900511139.png", callback);
+            groupCreate("GDQP", "GDQP", "", callback);
         },
         function (callback) {
-            groupCreate("Công nghệ", "Công nghệ", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646901612519.jpeg", callback);
+            groupCreate("Công nghệ", "Công nghệ", "", callback);
         },
         function (callback) {
-            groupCreate("Âm nhạc", "Âm nhạc", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646900192539.png", callback);
+            groupCreate("Âm nhạc", "Nhạc", "", callback);
         },
         function (callback) {
-            groupCreate("Mỹ thuật", "Mỹ thuật", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646900214148.png", callback);
+            groupCreate("Mỹ thuật", "Mỹ thuật", "", callback);
         },
         function (callback) {
-            groupCreate("Tin Học", "Tin học", "http://web-be-brmc9.ondigitalocean.app/uploads/avatar-1646900307612.png", callback);
+            groupCreate("Tin Học", "Tin học", "", callback);
         },
     ],
         cb);
@@ -123,18 +130,6 @@ function createGroupAuthors(cb) {
 
 function createPosts(cb) {
     async.parallel([
-        function (callback) {
-            postCreate('Toán', '(a^2 + b^2) = ?', users[0]._id, users[0].username, callback);
-        },
-        function (callback) {
-            postCreate('Anh', 'Hello = ?', users[2]._id, users[2].username, callback);
-        },
-        function (callback) {
-            postCreate('Toán', '1dm = ?cm', users[1]._id, users[1].username, callback);
-        },
-        function (callback) {
-            postCreate('Toán', '1km = ?m', users[0]._id, users[0].username, callback);
-        },
         function (callback) {
             postCreate('Toán', '(a^2 - b^2) = ?', users[2]._id, users[2].username, callback);
         },
