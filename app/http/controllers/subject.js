@@ -2,8 +2,6 @@ import db from '../../models/index.model.js';
 const { User, Group } = db;
 import mongoose from 'mongoose';
 var Schema = mongoose.Schema;
-var ObjectIdSchema = Schema.ObjectId;
-var ObjectId = mongoose.Types.ObjectId;
 import _ from 'lodash';
 
 export const createSubject = [

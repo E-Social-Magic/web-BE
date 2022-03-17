@@ -164,8 +164,8 @@ export const createPost = [
         }
         else {
             const post = new Post(req.body);
-            post.user_id = req.user.user_id;
-            post.username = req.user.username;
+            post.user_id = "req.user.user_id";
+            post.username = "req.user.username";
             post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
             post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
             post.save(function (err) {

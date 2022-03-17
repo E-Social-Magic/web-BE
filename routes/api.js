@@ -7,6 +7,7 @@ import * as helperController from '../app/http/controllers/helper.js';
 import * as commentController from '../app/http/controllers/comment.js';
 import * as subjectController from '../app/http/controllers/subject.js';
 import * as groupController from '../app/http/controllers/group.js';
+import * as paymentController from '../app/http/controllers/payment.js';
 import * as privateDataController from '../app/http/controllers/private_data.js';
 import verifyToken from '../app/http/middlewares/auth.js';
 import auth from './auth.js';
@@ -70,6 +71,12 @@ import auth from './auth.js';
   router.delete('/post/:id', verifyToken, postController.deletePost);
 
 // Helper
+
+// Payment 
+router.post('/deposit', verifyToken, paymentController.depositCoins);
+router.get('/notify', paymentController.processTransaction);
+// router.get('/status', userController.checkTransactionStatus);
+
 
 // Comment
   router.put('/post/:id/comment', verifyToken, commentController.createComment);
