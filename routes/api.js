@@ -8,7 +8,7 @@ import * as commentController from '../app/http/controllers/comment.js';
 import * as subjectController from '../app/http/controllers/subject.js';
 import * as groupController from '../app/http/controllers/group.js';
 import * as paymentController from '../app/http/controllers/payment.js';
-import * as privateDataController from '../app/http/controllers/private_data.js';
+// import * as privateDataController from '../app/http/controllers/private_data.js';
 import verifyToken from '../app/http/middlewares/auth.js';
 import auth from './auth.js';
 
@@ -72,11 +72,9 @@ import auth from './auth.js';
 
 // Helper
 
-// Payment 
-router.post('/deposit', verifyToken, paymentController.depositCoins);
-router.get('/notify', paymentController.processTransaction);
-// router.get('/status', userController.checkTransactionStatus);
-
+/* Payment */
+  router.post('/deposit', verifyToken, paymentController.depositCoins);
+  router.get('/notify', paymentController.processTransaction);
 
 // Comment
   router.put('/post/:id/comment', verifyToken, commentController.createComment);
@@ -97,10 +95,10 @@ router.get('/notify', paymentController.processTransaction);
   router.delete('/subject/:id', verifyToken, subjectController.deleteSubject);
 
 // Private data
-  router.get('/private_datas', privateDataController.listPrivateData);
-  router.get('/private_data/:id', privateDataController.deletePrivateData);
-  router.post('/private_data/new', verifyToken, privateDataController.createPrivateData);
-  router.put('/private_data/:id/edit', verifyToken, privateDataController.editPrivateData);
-  router.delete('/private_data/:id', verifyToken, privateDataController.deletePrivateData);
+  // router.get('/private_datas', privateDataController.listPrivateData);
+  // router.get('/private_data/:id', privateDataController.deletePrivateData);
+  // router.post('/private_data/new', verifyToken, privateDataController.createPrivateData);
+  // router.put('/private_data/:id/edit', verifyToken, privateDataController.editPrivateData);
+  // router.delete('/private_data/:id', verifyToken, privateDataController.deletePrivateData);
 
 export default router;

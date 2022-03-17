@@ -68,3 +68,8 @@ export const withdrawCoins = async (req, res) => {
 
 }
 //Rút coins
+/* 
+Tạo yêu cầu rút tiền 
+Ad đọc và xác nhận yêu cầu rút tiền 
+Ad chuyển tiền bằng tay  
+*/
