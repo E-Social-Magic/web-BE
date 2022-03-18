@@ -134,7 +134,34 @@ export const detailPayment = async (req, res) => {
 }
 //Rút coins
 export const withdrawCoins = async (req, res) => {
-
+    try {
+        if (!req.body.amount) {
+            return res.json({ message: "Vui Lòng nhập số tiền" })
+        }
+        const data = req.body;
+        data.requestId = data.partnerCode + new Date().getTime();
+        data.orderId = data.requestId;
+        data.orderInfo = "Rút tiền";
+        data.amount = req.body.amount;
+        data.user_id = req.user.user_id;
+        data.username = req.user.username;
+        
+        await axios.post(API_MOMO + '/create',
+            data,
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(function (response, next) {
+                return res.json({ data: response.data });
+            }).catch(function (err) {
+                console.error(err);
+            });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error: ${error}`,
+        });
+    }
 }
 
 
@@ -142,4 +169,5 @@ export const withdrawCoins = async (req, res) => {
 Tạo yêu cầu rút tiền 
 Ad đọc và xác nhận yêu cầu rút tiền 
 Ad chuyển tiền bằng tay  
+
 */

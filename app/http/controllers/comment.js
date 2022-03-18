@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 var ObjectId = mongoose.Types.ObjectId;
 import _ from 'lodash';
 import multer from 'multer';
+import path from "path";
 import { storageImages } from '../../../config/multer.js';
 const uploadImage = multer({ storage: storageImages, 
     fileFilter: function (req, file, done) {
@@ -19,10 +20,11 @@ export const createComment = [
     uploadImage.array("files"),
     async (req, res) => {
         try {
-            var images = "";
-            if(req.files){
+            let images = [];
+            if(req.files.length){
                 images = req.files.map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""))
             }
+            const user = await User.findById(req.user.user_id);
             const post = await Post.findOneAndUpdate(
                 { _id: req.params.id },
                 {
@@ -33,7 +35,8 @@ export const createComment = [
                             user_id: req.user.user_id,
                             username: req.user.username,
                             correct: false,
-                            images: images
+                            images: images,
+                            avatar: user.avatar
                         }
                     }
                 },
