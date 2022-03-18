@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const schema = new mongoose.Schema(
   {
     title: { type: String, required: true, maxLength: 100 },
+    author_avatar: { type: String, required: true },
     content: { type: String, required: true },
     images: { type: Array, required: false },
     videos: { type: Array, required: false },

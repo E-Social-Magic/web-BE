@@ -163,9 +163,11 @@ export const createPost = [
             return await createPostCosts(req, res, next);
         }
         else {
+            const user = await User.findById(req.user.user_id);
             const post = new Post(req.body);
-            post.user_id = "req.user.user_id";
-            post.username = "req.user.username";
+            post.user_id = req.user.user_id;
+            post.username = req.user.username;
+            post.author_avatar = user.avatar;
             post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
             post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
             post.save(function (err) {
@@ -183,9 +185,11 @@ export const createPostCosts = async (req, res, next) => {
             return res.json({ message: "Vui lòng nạp thêm tiền" });
         }
         else {
+            const user = await User.findById(req.user.user_id);
             const post = new Post(req.body);
             post.user_id = req.user.user_id;
             post.username = req.user.username;
+            post.author_avatar = user.avatar;
             post.costs = true;
             post.coins = req.body.coins;
             post.expired = req.body.expired;
@@ -209,8 +213,10 @@ export const createPostCosts = async (req, res, next) => {
 }
 
 export const createPostAnonymously = async (req, res, next) => {
+    const user = await User.findById(req.user.user_id);
     const post = new Post(req.body);
     post.user_id = req.user.user_id;
+    post.author_avatar = user.avatar;
     post.username = "Anonymously";
     post.hideName = true;
     post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
@@ -228,8 +234,10 @@ export const createPostAnonymouslyCosts = async (req, res, next) => {
             return res.json({ message: "Vui lòng nạp thêm tiền" });
         }
         else {
+            const user = await User.findById(req.user.user_id);
             const post = new Post(req.body);
             post.user_id = req.user.user_id;
+            post.author_avatar = user.avatar;
             post.username = "Anonymously";
             post.hideName = true;
             post.costs = true;

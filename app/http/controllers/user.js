@@ -54,7 +54,7 @@ export const userValidator = [
     body('password')
         .notEmpty().withMessage('Password must not be empty')
         .isLength({ min: 6 }).withMessage('Password must be at least 6 chars'),
-    check('confirm_password', 'Passwords do not match')
+    check('confirm', 'Passwords do not match')
         .exists().custom((value, { req }) => value === req.body.password),
     (req, res, next) => {
         const errors = validationResult(req);
@@ -270,9 +270,10 @@ export async function markCorrectAnswer(req, res) {
                 { passRawResult: true, returnOriginal: false }
             );
             const {user_id}= post.comments.find(v=>v.correct==true);
+            const owner = await User.findById({ _id: post.user_id });
             const user = await User.findById({ _id: user_id });
-            const coinsOfOwner = (10/100)* post.coins;
-            const coinsOfHelper = user.coins + (post.coins - coinsOfOwner);
+            const coinsOfOwner = owner.coins + ((10/100)*post.coins);
+            const coinsOfHelper = user.coins + (post.coins - ((10/100)* post.coins));
             await User.findByIdAndUpdate(
                 { _id: user_id },
                 { coins: coinsOfHelper }

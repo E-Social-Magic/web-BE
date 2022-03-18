@@ -17,6 +17,10 @@ var posts = []
 var groups = []
 
 function userCreate(username, password, email, avatar, cb) {
+    if(avatar == ""){
+        var uppercaseFirstLetter = username.charAt(0).toUpperCase();
+        avatar = "https://web-be-brmc9.ondigitalocean.app" + generateAvatar(uppercaseFirstLetter, "avatarP").replace("./public", "");
+    }
     bcrypt.hash(password, 10, (err, hash) => {
         var user = new User({
             username: username,
@@ -37,8 +41,9 @@ function userCreate(username, password, email, avatar, cb) {
     });
 }
 
-function postCreate(title, content, user_id, username, cb) {
-    var post = new Post({ title: title, content: content, user_id: user_id, username: username });
+function postCreate(title, content, user_id, username, author_avatar, cb) {
+    
+    var post = new Post({ title: title, content: content, user_id: user_id, username: username, author_avatar: author_avatar });
     post.save(function (err) {
         if (err) {
             cb(err, null);
@@ -53,7 +58,7 @@ function groupCreate(group_name, subject, image, cb) {
     const listUsers = [users[0]._id,users[2]._id,users[1]._id];
     if(image == ""){
         var uppercaseFirstLetter = group_name.charAt(0).toUpperCase();
-        image = "http://web-be-brmc9.ondigitalocean.app" + generateAvatar(uppercaseFirstLetter, "avatarG").replace("./public", "");
+        image = "https://web-be-brmc9.ondigitalocean.app" + generateAvatar(uppercaseFirstLetter, "avatarG").replace("./public", "");
     }
     var group = new Group({
         group_name: group_name,
@@ -74,13 +79,13 @@ function groupCreate(group_name, subject, image, cb) {
 function createGroupAuthors(cb) {
     async.series([
         function (callback) {
-            userCreate('Tanjiro', '123456', 'tojro1@gmail.com', 'https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/f/f9/Tanjiro_Anime_Profile.png/revision/latest/scale-to-width-down/98?cb=20191224040903', callback);
+            userCreate('Tanjiro', '123456', 'tojro1@gmail.com', '', callback);
         },
         function (callback) {
-            userCreate('Inosuke', '123456', 'tojro2@gmail.com', 'https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/4/46/Zenitsu_Anime_Profile.png/revision/latest/scale-to-width-down/98?cb=20191125204606', callback);
+            userCreate('Inosuke', '123456', 'tojro2@gmail.com', '', callback);
         },
         function (callback) {
-            userCreate('Zenitsu', '123456', "tojro3@gmail.com", 'https://static.wikia.nocookie.net/kimetsu-no-yaiba/images/c/c2/Inosuke_Anime_Profile.png/revision/latest/scale-to-width-down/98?cb=20191125204712', callback);
+            userCreate('Zenitsu', '123456', "tojro3@gmail.com", '', callback);
         },
         function (callback) {
             groupCreate("Toán", "Toán", "", callback);
@@ -131,16 +136,16 @@ function createGroupAuthors(cb) {
 function createPosts(cb) {
     async.parallel([
         function (callback) {
-            postCreate('Toán', '(a^2 - b^2) = ?', users[2]._id, users[2].username, callback);
+            postCreate('Toán', '(a^2 - b^2) = ?', users[2]._id, users[2].username, users[2].avatar, callback);
         },
         function (callback) {
-            postCreate('Anh', 'What là gì?', users[1]._id, users[1].username, callback);
+            postCreate('Anh', 'What là gì?', users[1]._id, users[1].username, users[1].avatar, callback);
         },
         function (callback) {
-            postCreate('Anh', 'Khi nào dùng When?', users[0]._id, users[0].username, callback);
+            postCreate('Anh', 'Khi nào dùng When?', users[0]._id, users[0].username, users[0].avatar, callback);
         },
         function (callback) {
-            postCreate('Sử', 'Ngày thành lập đảng là ngày bao nhiêu?', users[2]._id, users[2].username, callback);
+            postCreate('Sử', 'Ngày thành lập đảng là ngày bao nhiêu?', users[2]._id, users[2].username, users[2].avatar, callback);
         },
     ],
         cb);

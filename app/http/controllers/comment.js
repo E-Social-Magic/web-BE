@@ -19,10 +19,11 @@ export const createComment = [
     uploadImage.array("files"),
     async (req, res) => {
         try {
-            var images = "";
+            let images = [];
             if(req.files){
                 images = req.files.map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""))
             }
+            const user = await User.findById(req.user.user_id);
             const post = await Post.findOneAndUpdate(
                 { _id: req.params.id },
                 {
@@ -33,7 +34,8 @@ export const createComment = [
                             user_id: req.user.user_id,
                             username: req.user.username,
                             correct: false,
-                            images: images
+                            images: images,
+                            avatar: user.avatar
                         }
                     }
                 },
