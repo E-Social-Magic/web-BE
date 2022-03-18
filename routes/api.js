@@ -39,13 +39,6 @@ import auth from './auth.js';
       res.status(200).json({ success: true, message: 'Login success' });
     });
 
-// User
-  router.get('/user/info', verifyToken, [userController.userInfo]);
-  router.get('/user/:id/info', verifyToken, [userController.userInfoForAd]);
-  router.get('/users', verifyToken, [userController.getAllUser]);
-  router.post('/user/:id/edit', verifyToken, userController.editAccount);
-  router.post('/user/:id/block', verifyToken, userController.blockUser);
-
 // Quên mật khẩu
   router.get('/sendmailForget',
     function (req, res) {
@@ -59,40 +52,49 @@ import auth from './auth.js';
     return res.status(200).json("Logged out successfully!");
   });
 
+  // User
+  router.get('/user/info', verifyToken, [userController.userInfo]); // get one
+  router.get('/user/:id/info', verifyToken, [userController.userInfoForAd]); // get one for admin 
+  router.get('/users', verifyToken, [userController.getAllUser]); // get all user for admin
+  router.post('/user/:id/edit', verifyToken, userController.editAccount); // update user
+  router.post('/user/:id/block', verifyToken, userController.blockUser); // block user
+
 // Post 
-  router.get('/posts', postController.listPost);
-  router.get('/posts/admin', verifyToken, postController.listPostForAd);
-  router.get('/post/:id', postController.detailPost);
-  router.get('/post/:id/admin', verifyToken, postController.detailPostForAd);
-  router.get('/post/:id/vote', verifyToken, postController.vote);
-  router.post('/post/new', verifyToken, postController.createPost);
-  router.post('/post/:id/block', verifyToken, postController.blockPost);
-  router.put('/post/:id/edit', verifyToken, postController.editPost);
-  router.delete('/post/:id', verifyToken, postController.deletePost);
+  router.get('/posts', postController.listPost); // get all post 
+  router.get('/posts/admin', verifyToken, postController.listPostForAd); // get all post for admin
+  router.get('/post/:id', postController.detailPost); // get one 
+  router.get('/post/:id/admin', verifyToken, postController.detailPostForAd); // get one for admin 
+  router.get('/post/:id/vote', verifyToken, postController.vote); // function vote
+  router.post('/post/new', verifyToken, postController.createPost); // create post 
+  router.post('/post/:id/block', verifyToken, postController.blockPost); // block post
+  router.put('/post/:id/edit', verifyToken, postController.editPost); // update post
+  router.delete('/post/:id', verifyToken, postController.deletePost); // delete post
 
 // Helper
 
-/* Payment */
-  router.post('/deposit', verifyToken, paymentController.depositCoins);
-  router.get('/notify', paymentController.processTransaction);
+// Payment
+  router.post('/deposit', verifyToken, paymentController.depositCoins); // deposit coins
+  router.get('/payments', verifyToken, paymentController.listPayment); // get all
+  router.get('/payment/:id', verifyToken, paymentController.detailPayment); // get one
+  router.get('/notify', paymentController.processTransaction); // callback
 
 // Comment
-  router.put('/post/:id/comment', verifyToken, commentController.createComment);
-  router.put('/post/:id/comment/:commentId/edit', verifyToken, commentController.editComment);
-  router.put('/post/:id/comment/:commentId/markCorrect', verifyToken, userController.markCorrectAnswer);
-  router.delete('/post/:id/comment/:commentId', verifyToken, commentController.deleteComment);
+  router.put('/post/:id/comment', verifyToken, commentController.createComment); // create comment
+  router.put('/post/:id/comment/:commentId/edit', verifyToken, commentController.editComment); // update comment
+  router.put('/post/:id/comment/:commentId/markCorrect', verifyToken, userController.markCorrectAnswer); // mark correct answer
+  router.delete('/post/:id/comment/:commentId', verifyToken, commentController.deleteComment); // delete comment
 
 // Group
-  router.get('/groups', groupController.listGroup);
-  router.get('/group/:id', groupController.detailGroup);
-  router.post('/group/new', verifyToken, groupController.createGroup);
-  router.put('/group/:id/edit', verifyToken, groupController.editGroup);
-  router.delete('/group/:id', verifyToken, groupController.deleteGroup);
+  router.get('/groups', groupController.listGroup); // get all group
+  router.get('/group/:id', groupController.detailGroup); // get one group
+  router.post('/group/new', verifyToken, groupController.createGroup); // create group
+  router.put('/group/:id/edit', verifyToken, groupController.editGroup); // update group
+  router.delete('/group/:id', verifyToken, groupController.deleteGroup); // delete group
 
 // Add Subject, add User to Group
-  router.put('/subject/join', verifyToken, subjectController.createSubject);
-  router.put('/subject/:id/edit', verifyToken, subjectController.editSubject);
-  router.delete('/subject/:id', verifyToken, subjectController.deleteSubject);
+  router.put('/subject/join', verifyToken, subjectController.createSubject); // add user vào group
+  router.put('/subject/:id/edit', verifyToken, subjectController.editSubject); // update group & user
+  router.delete('/subject/:id', verifyToken, subjectController.deleteSubject); // delete user trong group & ngược lại 
 
 // Private data
   // router.get('/private_datas', privateDataController.listPrivateData);

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import User from './user.js';
 import Group from './group.js';
 import Post from './post.js';
+import Payment from './payment.js';
 // import Private_data from './private_data.js';
 
 mongoose.Promise= global.Promise
@@ -11,6 +12,7 @@ const db = {
     User,
     Post,
     Group,
+    Payment,
     // Private_data
 }
 
