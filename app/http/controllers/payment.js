@@ -1,6 +1,6 @@
 import db from '../../models/index.model.js';
 const { User, Payment, Payment_out } = db;
-const { createHmac } = await import('crypto');
+import { createHmac } from 'crypto';
 import axios from 'axios';
 import env from '../../../config/config.js';
 const { PARTNER_CODE, ACCESS_KEY, SECRET_KEY, API_MOMO } = env;

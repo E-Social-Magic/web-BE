@@ -32,8 +32,14 @@ export async function getAllUser(req, res) {
 }
 
 export const userInfo = async (req, res) => {
-    const user = await User.findOne({ _id: req.user.user_id }, { password: 0 })
-    return res.json({ user: user });
+    if(req.params.id === req.user.user_id){
+        let user = await User.findOne({ _id: req.user.user_id }, { password: 0 })
+        return res.json({ user: user });
+    }
+    else {
+        let user = await User.findOne({ _id: req.params.id }, { password: 0, payment_id: 0, role: 0 })
+        return res.json({ user: user });
+    }
 };
 
 export const userInfoForAd = async (req, res) => {
