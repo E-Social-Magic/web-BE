@@ -31,12 +31,12 @@ router.post('/login', async (req, res) => {
         return res.status(HTTPStatus.OK).json({message:"Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với Quản trị viên để biết thêm thông tin"});
       }
       const token = jwt.sign({ user_id: oldUser._id, username: oldUser.username, role:oldUser.role }, TOKEN_KEY, {
-        algorithm: 'HS384',
+        algorithm: 'HS256',
         expiresIn: '2h',
       });
-      const {username,role,createdAt,updatedAt,id}= oldUser
+      const {username,role,createdAt,updatedAt,id,avatar}= oldUser
       
-      return res.status(HTTPStatus.OK).json({email,username,role,id,token});
+      return res.status(HTTPStatus.OK).json({email,username,role,id,token,avatar});
     } 
     return res.status(HTTPStatus.OK).json({message:"Thông tin đăng nhập không chính xác! Hãy kiểm tra lại Username hoặc Password"});
   } catch (err) {

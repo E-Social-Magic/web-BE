@@ -52,8 +52,8 @@ import auth from './auth.js';
     return res.status(200).json("Logged out successfully!");
   });
 
-  // User
-  router.get('/user/info', verifyToken, [userController.userInfo]); // get one
+// User
+  router.get('/user/info/:id', verifyToken, [userController.userInfo]); // get one
   router.get('/user/:id/info', verifyToken, [userController.userInfoForAd]); // get one for admin 
   router.get('/users', verifyToken, [userController.getAllUser]); // get all user for admin
   router.post('/user/:id/edit', verifyToken, userController.editAccount); // update user
