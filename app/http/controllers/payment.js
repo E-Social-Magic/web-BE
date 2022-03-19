@@ -1,5 +1,5 @@
 import db from '../../models/index.model.js';
-const { User, Payment } = db;
+const { User, Payment, Payment_out } = db;
 const { createHmac } = await import('crypto');
 import axios from 'axios';
 import env from '../../../config/config.js';
@@ -21,7 +21,7 @@ export const depositCoins = async (req, res) => {
         data.redirectUrl = "http://localhost:3001/api/notify";
         data.ipnUrl = "http://localhost:3001/api/notify";
         data.amount = req.body.amount;
-        data.requestType = "captureWallet"
+        data.requestType = "captureWallet";
         data.extraData = user_id;
         var rawSignature = "accessKey=" + data.accessKey + "&amount=" + data.amount + "&extraData=" + data.extraData + "&ipnUrl=" + data.ipnUrl + "&orderId=" + data.orderId + "&orderInfo=" + data.orderInfo + "&partnerCode=" + data.partnerCode + "&redirectUrl=" + data.redirectUrl + "&requestId=" + data.requestId + "&requestType=" + data.requestType
         data.signature = createHmac('sha256', data.secretkey)
@@ -135,28 +135,30 @@ export const detailPayment = async (req, res) => {
 //Rút coins
 export const withdrawCoins = async (req, res) => {
     try {
-        if (!req.body.amount) {
-            return res.json({ message: "Vui Lòng nhập số tiền" })
+        const user = await User.findById(req.user.user_id);
+        if (!req.body.phone) {
+            return res.json({ message: "Vui lòng nhập số điện thoại" })
         }
-        const data = req.body;
-        data.requestId = data.partnerCode + new Date().getTime();
+        if (!req.body.displayName) {
+            return res.json({ message: "Vui lòng nhập tên hiển thị trên MOMO" })
+        }
+        if (!req.body.amount || req.body.amount < 10000 || req.body.amount > user.coins ) {
+            return res.json({ message: "Số tiền bạn nhập phải lớn hơn 10.000 VNĐ và nhỏ hơn số tiền bạn đang có!" });
+        }
+        const data = new Payment_out(req.body);
+        data.requestId = PARTNER_CODE + new Date().getTime();
         data.orderId = data.requestId;
-        data.orderInfo = "Rút tiền";
         data.amount = req.body.amount;
         data.user_id = req.user.user_id;
         data.username = req.user.username;
-        
-        await axios.post(API_MOMO + '/create',
-            data,
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(function (response, next) {
-                return res.json({ data: response.data });
-            }).catch(function (err) {
-                console.error(err);
-            });
+        data.phone = req.body.phone;
+        data.resultCode = "7000";
+        data.message = "Giao dịch đang được xử lý.";
+        data.displayName = req.body.displayName;
+        data.save(function (err) {
+            if (err) { return next(err); }
+            return res.json({ data, message: "Vui lòng đợi phản hồi từ Admin" })
+        });
     } catch (error) {
         return res.status(500).json({
             message: `Error: ${error}`,
@@ -164,6 +166,57 @@ export const withdrawCoins = async (req, res) => {
     }
 }
 
+export const confirmReq = async (req, res) => {
+    try {
+        if (req.user.role === "admin") {
+            const success = req.query.success;
+            const fail = req.query.fail;
+            const payment = await Payment_out.findById({ _id: req.params.id });
+            const admin = await User.findById({ _id: req.user.user_id });
+            const user = await User.findById({ _id: payment.user_id })
+            if (!success && !fail) {
+                return res.json("Nothing to do")
+            }
+            if (success == "true") {
+                const coinsOfAdmin = admin.coins + payment.amount;
+                const coinsOfUser = user.coins - payment.amount;
+                await User.findByIdAndUpdate(
+                    { _id: req.user.user_id },
+                    { coins: coinsOfAdmin }
+                );
+                await User.findByIdAndUpdate(
+                    { _id: payment.user_id },
+                    { coins: coinsOfUser }
+                );
+                const reqSuccess = await Payment_out.findOneAndUpdate(
+                    { _id: req.params.id },
+                    {
+                        resultCode: "0",
+                        message: "Giao dịch thành công."
+                    },
+                    { returnOriginal: false }
+                );
+                return res.json({ reqSuccess, message: "Thanh toán thành công!" });
+            }
+            if (fail == "true") {
+                const reqFail = await Payment_out.findOneAndUpdate(
+                    { _id: req.params.id },
+                    {
+                        resultCode: "1003",
+                        message: "Giao dịch bị đã bị hủy."
+                    },
+                    { returnOriginal: false }
+                );
+                return res.json({ reqFail, message: "Thanh toán thất bại!" });
+            }
+        }
+        return res.json({ message: "Bạn không có quyền truy cập!" })
+    } catch (error) {
+        return res.status(500).json({
+            message: `Error: ${error}`,
+        });
+    }
+}
 
 /* 
 Tạo yêu cầu rút tiền 

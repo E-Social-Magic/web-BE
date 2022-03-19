@@ -76,6 +76,8 @@ import auth from './auth.js';
   router.post('/deposit', verifyToken, paymentController.depositCoins); // deposit coins
   router.get('/payments', verifyToken, paymentController.listPayment); // get all
   router.get('/payment/:id', verifyToken, paymentController.detailPayment); // get one
+  router.get('/withdraw', verifyToken, paymentController.withdrawCoins); // get one
+  router.get('/withdraw/:id', verifyToken, paymentController.confirmReq); // get one
   router.get('/notify', paymentController.processTransaction); // callback
 
 // Comment

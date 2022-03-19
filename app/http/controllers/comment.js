@@ -42,7 +42,6 @@ export const createComment = [
                 },
                 { returnOriginal: false }
             );
-    
             if (post)
                 return res.json({ post, message: 'Comment successfully.' });
             return res.status(403).json({
