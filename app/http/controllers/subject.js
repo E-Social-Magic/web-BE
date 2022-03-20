@@ -3,6 +3,7 @@ const { User, Group } = db;
 import mongoose from 'mongoose';
 var Schema = mongoose.Schema;
 import _ from 'lodash';
+var success = "Hoàn thành!";
 
 export const createSubject = [
     async (req, res) => {
@@ -28,14 +29,14 @@ export const createSubject = [
                 );
             
             if(user) 
-                return res.json({ subjects: user.subjects, message: 'Add subject successfully.' });
+                return res.json({ subjects: user.subjects, message: success });
             return res.status(403).json({
-                message: `Cannot add subject at user_id=${req.user.user_id}. Maybe user was not found or No permission!`,
+                message: `Không thể thêm chủ đề. Có thể người dùng không tìm thấy hoặc Không có quyền!`,
             });
 
         } catch (error) {
             return res.status(500).json({
-                message: `Error: ${error}`,
+                message: `Lỗi: ${error}`,
             });
         }
     }
@@ -64,13 +65,13 @@ export async function editSubject(req, res) {
             );
         
         if(user)
-            return res.json({ subjects: user.subjects, message: 'Subject successfully.' });
+            return res.json({ subjects: user.subjects, message: success });
         return res.status(403).json({
-            message: `Cannot edit subject at id=${subjectID}!`,
+            message: `Không thể chỉnh sửa chủ đề. Có thể người dùng không tìm thấy hoặc Không có quyền!`,
         });
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 }
@@ -97,13 +98,13 @@ export async function deleteSubject(req, res) {
                 { returnOriginal: false }
             );
         if (user)
-            return res.json({ subjects: user.subjects, message: 'Delete successfully.' });
+            return res.json({ subjects: user.subjects, message: success });
         return res.status(403).json({
-            message: `Cannot delete subject at id=${subjectID}`,
+            message: `Không thể xóa chủ đề. Có thể người dùng không tìm thấy hoặc Không có quyền!`,
         });
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 

@@ -11,6 +11,7 @@ const schema = new mongoose.Schema(
     address: { type: String, required: false },
     payment_id: { type: String, required: false },
     follower: { type: Array, default:[], required: false },
+    following: { type: Array, default:[], required: false },
     phone: { type: String, required: false },
     description: { type: String, required: false },
     subjects: {type: Array, required: false},

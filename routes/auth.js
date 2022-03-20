@@ -22,7 +22,7 @@ router.post('/login', async (req, res) => {
     if (!(email && password)) {
       return res.status(HTTPStatus.BAD_REQUEST).send({
         message:
-          'Vui lòng không để trống thông tin đăng nhập! Bao gồm Email và Password!'
+          'Vui lòng không để trống thông tin đăng nhập! Bao gồm Email và Mật khẩu!'
       });
     }
     const oldUser = await User.findOne({ email });
@@ -56,11 +56,7 @@ const isLoggedIn = (req, res, next) => {
 router.get('/login/failed', (req, res) =>
   res
     .status(HTTPStatus.UNAUTHORIZED)
-    .json({ message: 'Login with is failed!' })
+    .json({ message: 'Đăng nhập không thành công!' })
 );
-
-router.post('/logout', (req, res) => {
-  res.status(200).json("Logged out successfully!");
-});
 
 export default router;

@@ -6,6 +6,8 @@ import _ from 'lodash';
 import multer from 'multer';
 import path from "path";
 import { storageImages } from '../../../config/multer.js';
+var success = "Hoàn thành!";
+
 const uploadImage = multer({ storage: storageImages, 
     fileFilter: function (req, file, done) {
         var ext = path.extname(file.originalname);
@@ -43,13 +45,13 @@ export const createComment = [
                 { returnOriginal: false }
             );
             if (post)
-                return res.json({ post, message: 'Comment successfully.' });
+                return res.json({ post, message: success });
             return res.status(403).json({
-                message: `Cannot Comment with id=${req.params.id}. Maybe post was not found or No permission!`,
+                message: `Không thể bình luận. Có thể không tìm thấy bài đăng hoặc Không có sự cho phép!`,
             });
         } catch (error) {
             return res.status(500).json({
-                message: `Error updating post with id= ${error}`,
+                message: `Lỗi: ${error}`,
             });
         }
     }
@@ -68,13 +70,13 @@ export async function editComment(req, res) {
             {passRawResult : true, returnOriginal: false }
         );
         if (_.find(posts.comments,{_id:commentID,comment:req.body.comment}))
-            return res.json({ posts, message: 'Comment successfully.' });
+            return res.json({ posts, message: success });
         return res.status(403).json({
-            message: `Cannot Comment with id=${req.params.id}. Maybe post was not found or No permission!`,
+            message: `Không thể sửa bình luận. Bình luận không tồn tại hoặc Không có sự cho phép!`,
         });
     } catch (error) {
         return res.status(500).json({
-            message: `Error updating post with id= ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 }
@@ -88,13 +90,13 @@ export async function deleteComment(req, res) {
             { returnOriginal: false }
         );
         if (post)
-            return res.json({ post, message: 'Delete successfully.' });
+            return res.json({ post, message: success });
         return res.status(403).json({
-            message: `Cannot delete comment with id=${commentID}. Maybe post was not found or No permission!`,
+            message: `Không thể xóa bình luận. Bình luận không tồn tại hoặc Không có sự cho phép!`,
         });
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 

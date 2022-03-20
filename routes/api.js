@@ -13,43 +13,43 @@ import verifyToken from '../app/http/middlewares/auth.js';
 import auth from './auth.js';
 
 // Đăng ký
-  router.get('/signup',
-    function (req, res, next) {
-      res.json({ title: "Create Account", message: "Get UI for Create Account" });
-    });
+  // router.get('/signup',
+  //   function (req, res, next) {
+  //     res.json({ title: "Create Account", message: "Get UI for Create Account" });
+  //   });
   router.post('/signup', userController.userValidator, userController.createAccount);
   // router.post('/signup', userController.signup);
 
 // Đăng nhập 
   router.post('/login', auth);
-  router.get('/login/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
-  );
-  router.get('/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: '/login', failureMessage: true }),
-    function (req, res) {
-      res.status(200).json({ success: true, message: 'Login success' });
-    });
-  router.get('/login/facebook',
-    passport.authenticate('facebook', { scope: ['email'] })
-  );
-  router.get('/auth/facebook/callback',
-    passport.authenticate('facebook', { failureRedirect: '/login', failureMessage: true }),
-    function (req, res) {
-      res.status(200).json({ success: true, message: 'Login success' });
-    });
+  // router.get('/login/google',
+  //   passport.authenticate('google', { scope: ['profile', 'email'] })
+  // );
+  // router.get('/auth/google/callback',
+  //   passport.authenticate('google', { failureRedirect: '/login', failureMessage: true }),
+  //   function (req, res) {
+  //     res.status(200).json({ success: true, message: 'Login success' });
+  //   });
+  // router.get('/login/facebook',
+  //   passport.authenticate('facebook', { scope: ['email'] })
+  // );
+  // router.get('/auth/facebook/callback',
+  //   passport.authenticate('facebook', { failureRedirect: '/login', failureMessage: true }),
+  //   function (req, res) {
+  //     res.status(200).json({ success: true, message: 'Login success' });
+  //   });
 
 // Quên mật khẩu
-  router.get('/sendmailForget',
-    function (req, res) {
-      res.json({ message: "Sended" });
-    });
+  // router.get('/sendmailForget',
+  //   function (req, res) {
+  //     res.json({ message: "Sended" });
+  //   });
   router.post('/sendmailForget', userController.sendmailFogot);
   router.post('/sendmailForget/confirm', userController.updatePassword);
 
 // Đăng xuất
   router.post('/logout', (req, res) => {
-    return res.status(200).json("Logged out successfully!");
+    return res.status(200).json({message: "Đăng xuất thành công!"});
   });
 
 // User
@@ -74,7 +74,8 @@ import auth from './auth.js';
 
 // Payment
   router.post('/deposit', verifyToken, paymentController.depositCoins); // gửi req deposit coins
-  router.get('/payments', verifyToken, paymentController.listPayment); // get all
+  router.get('/payments', verifyToken, paymentController.listPayment); // get all payments
+  router.get('/paymentouts', verifyToken, paymentController.listPaymentOut); // get all paymentouts
   router.get('/payment/:id', verifyToken, paymentController.detailPayment); // get one
   router.post('/withdraw', verifyToken, paymentController.withdrawCoins); // gửi req withdraw coins
   router.get('/withdraw/:id', verifyToken, paymentController.confirmReq); // get one

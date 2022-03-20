@@ -12,7 +12,7 @@ const verifyToken = (req, res, next) => {
   if (!token) {
     return res
       .status(HTTPStatus.UNAUTHORIZED)
-      .json({ message: 'A token is required for authentication' });
+      .json({ message: 'Cần có mã thông báo để xác thực' });
   }
   try {
     const decoded = jwt.verify(token, TOKEN_KEY);
@@ -20,7 +20,7 @@ const verifyToken = (req, res, next) => {
   } catch (err) {
     return res
       .status(HTTPStatus.UNAUTHORIZED)
-      .json({ message: 'Invalid Token' });
+      .json({ message: 'Mã không hợp lệ' });
   }
   return next();
 };

@@ -7,6 +7,8 @@ const uploadImage = multer({
     storage: storageImages,
     fileFilter: fileFilter
 });
+var success = "Hoàn thành!";
+var noPermission = "Không có quyền truy cập!";
 
 export const listPost = [
     async (req, res) => {
@@ -29,8 +31,10 @@ export const listPost = [
                     .exec();
                 const count = await Post.countDocuments();
                 return res.json({
-                    posts, totalPages: Math.ceil(count / limit),
-                    currentPage: offset, message: 'Hoàn thành tìm kiếm'
+                    posts,
+                    totalPages: Math.ceil(count / limit),
+                    currentPage: offset,
+                    message: success
                 });
             }
             else {
@@ -47,11 +51,14 @@ export const listPost = [
                 return res.json({
                     posts,
                     totalPages: Math.ceil(count / limit),
-                    currentPage: offset
+                    currentPage: offset,
+                    message: success
                 });
             }
-        } catch (err) {
-            console.error(err.message);
+        } catch (error) {
+            return res.status(500).json({
+                message: `Lỗi: ${error}`,
+            });
         }
     },
 ]
@@ -69,7 +76,8 @@ export const listPostForAd = [
                 return res.json({
                     posts,
                     totalPages: Math.ceil(count / limit),
-                    currentPage: offset
+                    currentPage: offset,
+                    message: success
                 });
             }
             else if (req.query.search && req.user.role == "admin") {
@@ -84,11 +92,13 @@ export const listPostForAd = [
                 const count = await Post.countDocuments();
                 return res.json({
                     posts, totalPages: Math.ceil(count / limit),
-                    currentPage: offset, message: 'Hoàn thành tìm kiếm'
+                    currentPage: offset, message: success
                 });
             }
-        } catch (err) {
-            console.error(err.message);
+        } catch (error) {
+            return res.status(500).json({
+                message: `Lỗi: ${error}`,
+            });
         }
     },
 ]
@@ -107,12 +117,13 @@ export const detailPost = async (req, res) => {
                 username: user.username,
                 comments: post.comments,
                 images: post.images,
-                coins: post.coins
+                coins: post.coins,
+                message: success
             });
         }
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 }
@@ -121,14 +132,14 @@ export const detailPostForAd = async (req, res) => {
     try {
         const post = await Post.findOne({ _id: req.params.id });
         if (req.user.role == "admin") {
-            return res.json({ post });
+            return res.json({ post, message: success });
         }
         else {
-            return res.json("Bạn không có quyền truy cập!")
+            return res.json({ message: noPermission })
         }
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 }
@@ -144,10 +155,10 @@ export const createPost = [
     uploadImage.array("files"),
     async (req, res, next) => {
         if (!req.body.title) {
-            return res.json("Title must not be empty.")
+            return res.json("Tiêu đề không được để trống.")
         }
         if (!req.body.content) {
-            return res.json("Content must not be empty.")
+            return res.json("Nội dung không được để trống.")
         }
         const expired = req.body.expired;
         if (expired < new Date().getTime() / 1000 || !expired || !new Date(expired)) {
@@ -173,7 +184,7 @@ export const createPost = [
             post.save(function (err) {
                 if (err) { return next(err); }
             });
-            return res.status(200).json(post);
+            return res.status(200).json({ post, message: success });
         }
     }
 ]
@@ -202,12 +213,12 @@ export const createPostCosts = async (req, res, next) => {
             );
             post.save(function (err) {
                 if (err) { return next(err); }
-                return res.status(200).json(post);
+                return res.status(200).json({ post, message: success });
             });
         }
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 }
@@ -217,13 +228,13 @@ export const createPostAnonymously = async (req, res, next) => {
     const post = new Post(req.body);
     post.user_id = req.user.user_id;
     post.author_avatar = user.avatar;
-    post.username = "Anonymously";
+    post.username = "Ẩn danh";
     post.hideName = true;
     post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
     post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
     post.save(function (err) {
         if (err) { return next(err); }
-        return res.status(200).json(post);
+        return res.status(200).json({ post, message: success });
     });
 }
 
@@ -238,7 +249,7 @@ export const createPostAnonymouslyCosts = async (req, res, next) => {
             const post = new Post(req.body);
             post.user_id = req.user.user_id;
             post.author_avatar = user.avatar;
-            post.username = "Anonymously";
+            post.username = "Ẩn danh";
             post.hideName = true;
             post.costs = true;
             post.coins = req.body.coins;
@@ -252,12 +263,12 @@ export const createPostAnonymouslyCosts = async (req, res, next) => {
             );
             post.save(function (err) {
                 if (err) { return next(err); }
-                return res.status(200).json(post);
+                return res.status(200).json({ post, message: success });
             });
         }
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 }
@@ -267,29 +278,31 @@ export const editPost = [
     async (req, res) => {
         try {
             const data = req.body;
-            await Post.findOneAndUpdate(
+            if (req.files) {
+                await Post.findOneAndUpdate(
+                    { _id: req.params.id, user_id: req.user.user_id },
+                    {
+                        $set: {
+                            "images": req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", "")),
+                            "videos": req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""))
+                        }
+                    },
+                    { returnOriginal: false }
+                );
+            }
+            const post = await Post.findOneAndUpdate(
                 { _id: req.params.id, user_id: req.user.user_id },
                 data,
                 { returnOriginal: false }
             );
-            const post = await Post.findOneAndUpdate(
-                { _id: req.params.id, user_id: req.user.user_id },
-                {
-                    $set: {
-                        "images": req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", "")),
-                    }
-                },
-                { returnOriginal: false }
-            );
-
             if (post)
-                return res.json({ post, message: 'Post was updated successfully.' });
+                return res.json({ post, message: 'Bài đăng đã được cập nhật thành công.' });
             return res.status(403).json({
-                message: `Cannot update post with id=${req.params.id}. Maybe post was not found or No permission!`,
+                message: `Không thể cập nhật bài đăng. Có thể không tìm thấy bài đăng hoặc Không có sự cho phép!`,
             });
         } catch (error) {
             return res.status(500).json({
-                message: `Error: ${error}`,
+                message: `Lỗi: ${error}`,
             });
         }
     }
@@ -298,12 +311,12 @@ export const editPost = [
 export async function deletePost(req, res) {
     Post.findOneAndRemove({ _id: req.params.id }, { $or: [{ user_id: req.user.user_id }, { role: "admin" }] }, (err) => {
         if (err) { return res.json({ err }) }
-        return res.json({ 'mess': 'Delete success' })
+        return res.json({ message: success })
     });
 }
 
-export const vote = [
-    async (req, res, next) => {
+export const vote = async (req, res, next) => {
+    try {
         const userId = req.user.user_id;
         const postId = req.params.id;
         const up = req.query.up;
@@ -374,9 +387,13 @@ export const vote = [
             { votes: votes },
             { returnOriginal: false }
         );
-        return res.json({ votes });
+        return res.json({ votes, message: success });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Lỗi: ${error}`,
+        });
     }
-]
+}
 
 export const blockPost = async (req, res) => {
     try {
@@ -389,22 +406,22 @@ export const blockPost = async (req, res) => {
                     { blocked: false },
                     { returnOriginal: false }
                 );
-                return res.json({ blocked: postUnblock.blocked, message: 'Post was unblocked successfully.' });
+                return res.json({ blocked: postUnblock.blocked, message: 'Bài đăng đã được bỏ chặn thành công.' });
             } else {
                 const postBlock = await Post.findOneAndUpdate(
                     { _id: req.params.id },
                     { blocked: true },
                     { returnOriginal: false }
                 );
-                return res.json({ blocked: postBlock.blocked, message: 'Post was blocked successfully.' });
+                return res.json({ blocked: postBlock.blocked, message: 'Bài đăng đã bị chặn thành công.' });
             }
         }
         return res.status(403).json({
-            message: `Cannot blocked post with id=${req.params.id}. Maybe post was not found or No permission!`,
+            message: `Không thể chặn bài đăng. Có thể không tìm thấy bài đăng hoặc Không có sự cho phép!`,
         });
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 }
