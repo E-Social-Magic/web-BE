@@ -4,6 +4,8 @@ import { createHmac } from 'crypto';
 import axios from 'axios';
 import env from '../../../config/config.js';
 const { PARTNER_CODE, ACCESS_KEY, SECRET_KEY, API_MOMO } = env;
+var success = "Hoàn thành";
+var noPermission = "Không có quyền truy cập!";
 //Nạp coins
 export const depositCoins = async (req, res) => {
     try {
@@ -35,13 +37,13 @@ export const depositCoins = async (req, res) => {
                     'Content-Type': 'application/json'
                 }
             }).then(function (response, next) {
-                return res.json({ data: response.data });
+                return res.json({ data: response.data, message: success });
             }).catch(function (err) {
                 console.error(err);
             });
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 }
@@ -67,19 +69,19 @@ export const processTransaction = async (req, res) => {
                 { coins: data.amount },
                 { returnOriginal: false }
             )
-            return res.json("Thanh toán thành công!");
+            return res.json({message: "Thanh toán thành công!"});
         }
         else {
-            return res.json("Thanh toán không thành công!")
+            return res.json({message: "Thanh toán không thành công!"})
         }
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 }
 
-export const listPayment = [async (req, res) => {
+export const listPayment = async (req, res) => {
     const { offset = 1, limit = 10 } = req.query;
     try {
         const payments = await Payment.find()
@@ -90,12 +92,15 @@ export const listPayment = [async (req, res) => {
         res.json({
             payments,
             totalPages: Math.ceil(count / limit),
-            currentPage: offset
+            currentPage: offset,
+            message: success
         });
-    } catch (err) {
-        console.error(err.message);
+    } catch (error) {
+        return res.status(500).json({
+            message: `Lỗi: ${error}`,
+        });
     }
-}]
+}
 
 export const detailPayment = async (req, res) => {
     try {
@@ -118,20 +123,41 @@ export const detailPayment = async (req, res) => {
                         'Content-Type': 'application/json'
                     }
                 }).then(function (response, next) {
-                    return res.json({ data: response.data });
+                    return res.json({ data: response.data, message: success });
                 }).catch(function (err) {
                     console.error(err);
                 });
         }
         else {
-            return res.json({ message: "Bạn không có quyền truy cập!" });
+            return res.status(403).json({ message: noPermission });
         }
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 }
+
+export const listPaymentOut = [async (req, res) => {
+    const { offset = 1, limit = 10 } = req.query;
+    try {
+        const payments = await Payment_out.find()
+            .limit(limit * 1)
+            .skip((offset - 1) * limit)
+            .exec();
+        const count = await Payment_out.countDocuments();
+        res.json({
+            payments,
+            totalPages: Math.ceil(count / limit),
+            currentPage: offset,
+            message: success
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Lỗi: ${error}`,
+        });
+    }
+}]
 //Rút coins
 export const withdrawCoins = async (req, res) => {
     try {
@@ -161,7 +187,7 @@ export const withdrawCoins = async (req, res) => {
         });
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 }
@@ -175,7 +201,7 @@ export const confirmReq = async (req, res) => {
             const admin = await User.findById({ _id: req.user.user_id });
             const user = await User.findById({ _id: payment.user_id })
             if (!success && !fail) {
-                return res.json("Nothing to do")
+                return res.json("Không có truy vấn")
             }
             if (success == "true") {
                 const coinsOfAdmin = admin.coins + payment.amount;
@@ -213,7 +239,7 @@ export const confirmReq = async (req, res) => {
         return res.json({ message: "Bạn không có quyền truy cập!" })
     } catch (error) {
         return res.status(500).json({
-            message: `Error: ${error}`,
+            message: `Lỗi: ${error}`,
         });
     }
 }

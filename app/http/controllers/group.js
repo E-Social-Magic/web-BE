@@ -4,6 +4,7 @@ import _ from 'lodash';
 import multer from 'multer';
 import { storageImages } from '../../../config/multer.js';
 import { generateAvatar } from './generator.js';
+var success = "Hoàn thành!";
 const uploadImage = multer({
     storage: storageImages,
     fileFilter: (req, file, cb) => {
@@ -33,46 +34,63 @@ export const listGroup = [async (req, res) => {
         res.json({
             groups,
             totalPages: Math.ceil(count / limit),
-            currentPage: offset
+            currentPage: offset,
+            message: success
         });
-    } catch (err) {
-        console.error(err.message);
+    } catch (error) {
+        return res.status(500).json({
+            message: `Lỗi: ${error}`,
+        });
     }
 }]
 
 export function detailGroup(req, res) {
-    Group.findById(req.params.id).exec(function (err, group) {
-        if (err) { return res.json({ err }) }
-        return res.json({
-            group_name: group.group_name,
-            subject: group.subject,
-            private_dt: group.private_dt,
-            avatar: group.avatar
+    try {
+        Group.findById(req.params.id).exec(function (err, group) {
+            if (err) { return res.json({ err }) }
+            return res.json({
+                group_name: group.group_name,
+                subject: group.subject,
+                private_dt: group.private_dt,
+                avatar: group.avatar,
+                message: success
+            });
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: `Lỗi: ${error}`,
         });
-    })
+    }
 }
 
 export const createGroup = [
     uploadImage.single("avatarG"),
     (req, res, next) => {
-        if (!req.body.group_name) {
-            return res.json("Group name must not be empty.")
+        try {
+            if (!req.body.group_name) {
+                return res.json("Tên nhóm không được để trống.")
+            }
+            if (!req.body.subject) {
+                return res.json("Chủ đề không được để trống.")
+            }
+            const group = new Group(req.body);
+            if (req.file) {
+                group.avatar = req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
+            }
+            else {
+                var uppercaseFirstLetter = req.body.group_name.charAt(0).toUpperCase();
+                group.avatar = req.protocol + "://" + req.headers.host + generateAvatar(uppercaseFirstLetter, "avatarG").replace("./public", "");
+            }
+            group.save(function (err) {
+                if (err) { return next(err); }
+                return res.status(200).json({ group, message: success });
+            });
+        } catch (error) {
+            return res.status(500).json({
+                message: `Lỗi: ${error}`,
+            });
         }
-        if (!req.body.subject) {
-            return res.json("Subject must not be empty.")
-        }
-        const group = new Group(req.body);
-        if (req.file) {
-            group.avatar = req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
-        }
-        else {
-            var uppercaseFirstLetter = req.body.group_name.charAt(0).toUpperCase();
-            group.avatar = req.protocol + "://" + req.headers.host + generateAvatar(uppercaseFirstLetter, "avatarG").replace("./public", "");
-        }
-        group.save(function (err) {
-            if (err) { return next(err); }
-            return res.status(200).json(group);
-        });
+
     }
 ]
 
@@ -89,13 +107,13 @@ export const editGroup = [
             );
 
             if (group)
-                return res.json({ group, message: 'Group was updated successfully.' });
+                return res.json({ group, message: success });
             return res.status(403).json({
-                message: `Cannot update group with id=${req.params.id}. Maybe group was not found or No permission!`,
+                message: `Không thể cập nhật nhóm. Có thể nhóm không được tìm thấy hoặc Không có quyền!`,
             });
         } catch (error) {
             return res.status(500).json({
-                message: `Error: ${error}`,
+                message: `Lỗi: ${error}`,
             });
         }
     }
@@ -104,6 +122,6 @@ export const editGroup = [
 export async function deleteGroup(req, res) {
     Group.findOneAndRemove({ _id: req.params.id }, { $or: [{ user_id: req.user.user_id }, { role: "admin" }] }, (err) => {
         if (err) { return res.json({ err }) }
-        return res.json({ 'mess': 'Delete success' })
+        return res.json({ message: success })
     });
 }
