@@ -5,8 +5,7 @@ var Schema = mongoose.Schema;
 import _ from 'lodash';
 var success = "Hoàn thành!";
 
-export const createSubject = [
-    async (req, res) => {
+export const createSubject = async (req, res) => {
         try {
             if(!(req.body.subjects instanceof Array)){
                 return res.status(400).end();
@@ -21,7 +20,7 @@ export const createSubject = [
                 { returnOriginal: false }
             )
             const user = await User.findOneAndUpdate(
-                    { _id: req.user.user_id },
+                    { _id: req.user.user_id},
                     {
                     subjects: arr
                     },
@@ -29,7 +28,7 @@ export const createSubject = [
                 );
             
             if(user) 
-                return res.json({ subjects: user.subjects, message: success });
+                return res.json({ user, message: "Đăng ký thành công!" });
             return res.status(403).json({
                 message: `Không thể thêm chủ đề. Có thể người dùng không tìm thấy hoặc Không có quyền!`,
             });
@@ -40,7 +39,6 @@ export const createSubject = [
             });
         }
     }
-]
 
 export async function editSubject(req, res) {
     try {
@@ -59,7 +57,7 @@ export async function editSubject(req, res) {
         const user = await User.findOneAndUpdate(
                 { _id: req.user.user_id },
                 {
-                    $push: {subjects: arr}
+                    subjects: arr
                 },
                 { returnOriginal: false }
             );

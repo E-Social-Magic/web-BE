@@ -10,6 +10,7 @@ import _ from 'lodash';
 import multer from 'multer';
 import { storageImages } from '../../../config/multer.js';
 import { generateAvatar } from './generator.js';
+import { createSubject } from './subject.js';
 var code;
 var success = "Hoàn thành!";
 var noPermission = "Không có quyền truy cập!";
@@ -26,7 +27,6 @@ const uploadImage = multer({
 });
 
 export const getAllUser = async (req, res) => {
-
     const { offset = 1, limit = 10 } = req.query;
     try {
         if (req.user.role == "admin") {
@@ -62,6 +62,11 @@ export const userInfo = async (req, res) => {
         let user = await User.findOne({ _id: req.params.id }, { password: 0, payment_id: 0, role: 0 })
         return res.json({ user: user, message: success });
     }
+};
+
+export const userInfoPerson = async (req, res) => {
+        const user = await User.findOne({ _id: req.user.user_id }, { password: 0 })
+        return res.json({ user: user, message: success });
 };
 
 export const userInfoForAd = async (req, res) => {
@@ -124,27 +129,29 @@ export const createAccount = [
                 return res.json({ message: 'Email đã được sử dụng' })
             }
             else {
-                bcrypt.hash(req.body.password, 10, (err, hash) => {
-                    const user = new User(req.body);
-                    user.password = hash;
-                    if (req.file) {
-                        user.avatar = req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
-                    }
-                    else {
-                        var uppercaseFirstLetter = req.body.username.charAt(0).toUpperCase();
-                        user.avatar = req.protocol + "://" + req.headers.host + generateAvatar(uppercaseFirstLetter, "avatarP").replace("./public", "");
-                    }
-                    user.role = "user";
-                    user.save(function (err) {
-                        if (err) {
-                            return next(err);
-                        }
-                        // var subject = "Notice of successful registrationThanks "
-                        // var view = "<h2>Welcome</h2><p>You have successfully registered</p>";
-                        // sendMail(req.body.email, subject, view);
-                        return res.json({ message: 'Đăng ký thành công!' })
-                    });
-                })
+                const hash = await bcrypt.hash(req.body.password, 10);
+                const user = new User(req.body);
+                user.password = hash;
+                if (req.file) {
+                    user.avatar = req.protocol + "://" + req.headers.host + req.file.path.replace("public", "");
+                }
+                else {
+                    var uppercaseFirstLetter = req.body.username.charAt(0).toUpperCase();
+                    user.avatar = req.protocol + "://" + req.headers.host + generateAvatar(uppercaseFirstLetter, "avatarP").replace("./public", "");
+                }
+                user.role = "user";
+                const userAfter = await user.save();
+                if(!userAfter){
+                    return res.json({ message: 'Đăng ký không thành công!' });
+                }
+                else{
+                    req.user = {};
+                    req.user.user_id = userAfter._id
+                    await createSubject(req, res);
+                }
+                // var subject = "Notice of successful registrationThanks "
+                // var view = "<h2>Welcome</h2><p>You have successfully registered</p>";
+                // sendMail(req.body.email, subject, view);
             }
         } catch (error) {
             return res.status(500).json({

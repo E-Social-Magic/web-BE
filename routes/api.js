@@ -54,6 +54,7 @@ import auth from './auth.js';
 
 // User
   router.get('/user/info/:id', verifyToken, [userController.userInfo]); // get one
+  router.get('/user/info', verifyToken, [userController.userInfoPerson]); // get one
   router.get('/user/:id/info', verifyToken, [userController.userInfoForAd]); // get one for admin 
   router.get('/users', verifyToken, [userController.getAllUser]); // get all user for admin
   router.post('/user/:id/edit', verifyToken, userController.editAccount); // update user
@@ -61,6 +62,7 @@ import auth from './auth.js';
 
 // Post 
   router.get('/posts', postController.listPost); // get all post 
+  router.get('/posts/:group_id', postController.listPostGroup); // get all post 
   router.get('/posts/admin', verifyToken, postController.listPostForAd); // get all post for admin
   router.get('/post/:id', postController.detailPost); // get one 
   router.get('/post/:id/admin', verifyToken, postController.detailPostForAd); // get one for admin 

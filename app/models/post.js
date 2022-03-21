@@ -9,6 +9,7 @@ const schema = new mongoose.Schema(
     videos: { type: Array, required: false },
     user_id: { type: String, required: true },
     username: { type: String, required: false },
+    group_id: { type: String, required: false },
     costs: { type: Boolean, default: false, required: false },
     private: { type: Boolean, default: false, required: false },
     blocked: { type: Boolean, default: false, required: false },
@@ -23,7 +24,7 @@ const schema = new mongoose.Schema(
   { timestamps: true }
 );
 
-schema.index({ title: 'text', content: 'text' });
+schema.index({ title: 'text', content: 'text', group: 'text' });
 
 schema.method('toJSON', function () {
   const { __v, _id, ...object } = this.toObject();

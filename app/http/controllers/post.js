@@ -1,5 +1,7 @@
 import db from '../../models/index.model.js';
-const { Post, User } = db;
+const { Post, User, Group } = db;
+import mongoose from 'mongoose';
+var ObjectId = mongoose.Types.ObjectId;
 import _ from 'lodash';
 import multer from 'multer';
 import { storageImages, fileFilter } from '../../../config/multer.js';
@@ -42,6 +44,61 @@ export const listPost = [
                     $and: [
                         { blocked: { $ne: true } },
                         { private: { $ne: true } }
+                    ]
+                })
+                    .limit(limit * 1)
+                    .skip((offset - 1) * limit)
+                    .exec();
+                const count = await Post.countDocuments();
+                return res.json({
+                    posts,
+                    totalPages: Math.ceil(count / limit),
+                    currentPage: offset,
+                    message: success
+                });
+            }
+        } catch (error) {
+            return res.status(500).json({
+                message: `Lỗi: ${error}`,
+            });
+        }
+    },
+]
+
+export const listPostGroup = [
+    async (req, res) => {
+        const { offset = 1, limit = 10 } = req.query;
+        try {
+            if (req.query.search) {
+                const posts = await Post.find({
+                    $and: [
+                        { blocked: { $ne: true } },
+                        { private: { $ne: true } }, ,
+                        { group_id: req.params.group_id },
+                        {
+                            $text: {
+                                $search: req.query.search
+                            }
+                        }
+                    ]
+                })
+                    .limit(limit * 1)
+                    .skip((offset - 1) * limit)
+                    .exec();
+                const count = await Post.countDocuments();
+                return res.json({
+                    posts,
+                    totalPages: Math.ceil(count / limit),
+                    currentPage: offset,
+                    message: success
+                });
+            }
+            else {
+                const posts = await Post.find({
+                    $and: [
+                        { blocked: { $ne: true } },
+                        { private: { $ne: true } },
+                        { group_id: req.params.group_id }
                     ]
                 })
                     .limit(limit * 1)
@@ -106,18 +163,12 @@ export const listPostForAd = [
 export const detailPost = async (req, res) => {
     try {
         const post = await Post.findById({ _id: req.params.id });
-        const user = await User.findById(post.user_id);
         if (post.blocked == true) {
             return res.json({ message: "Bài viết đã bị chặn bởi Admin" })
         }
         else {
             return res.json({
-                title: post.title,
-                content: post.content,
-                username: user.username,
-                comments: post.comments,
-                images: post.images,
-                coins: post.coins,
+                post: post,
                 message: success
             });
         }
@@ -160,6 +211,14 @@ export const createPost = [
         if (!req.body.content) {
             return res.json("Nội dung không được để trống.")
         }
+        if (!req.body.group_id) {
+            return res.json("Hãy chọn nhóm mà bạn muốn đăng bài.")
+        }
+        const group_id = new ObjectId(req.body.group_id);
+        const user = await User.findOne({ _id: req.user.user_id });
+        if (!user.subjects.includes(group_id)) {
+            return res.json("Bạn chưa tham gia vào nhóm bạn muốn đăng bài viết!");
+        }
         const expired = req.body.expired;
         if (expired < new Date().getTime() / 1000 || !expired || !new Date(expired)) {
             req.body.expired = 4075911643;
@@ -179,12 +238,21 @@ export const createPost = [
             post.user_id = req.user.user_id;
             post.username = req.user.username;
             post.author_avatar = user.avatar;
+            post.group_id = req.body.group_id;
             post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
             post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
-            post.save(function (err) {
-                if (err) { return next(err); }
-            });
-            return res.status(200).json({ post, message: success });
+            const postAfter = await post.save();
+            if (!postAfter) {
+                return res.json({ message: 'Đăng bài không thành công!' });
+            }
+            await Group.findByIdAndUpdate(
+                { _id: req.body.group_id },
+                {
+                    $push: { posts: postAfter._id }
+                },
+                { returnOriginal: false }
+            )
+            return res.status(200).json({ postAfter, message: success });
         }
     }
 ]
@@ -202,6 +270,7 @@ export const createPostCosts = async (req, res, next) => {
             post.username = req.user.username;
             post.author_avatar = user.avatar;
             post.costs = true;
+            post.group_id = req.body.group_id;
             post.coins = req.body.coins;
             post.expired = req.body.expired;
             post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
@@ -211,10 +280,18 @@ export const createPostCosts = async (req, res, next) => {
                 { _id: req.user.user_id },
                 { coins: coinsAfterPost }
             );
-            post.save(function (err) {
-                if (err) { return next(err); }
-                return res.status(200).json({ post, message: success });
-            });
+            const postAfter = await post.save();
+            if (!postAfter) {
+                return res.json({ message: 'Đăng bài không thành công!' });
+            }
+            await Group.findByIdAndUpdate(
+                { _id: req.body.group_id },
+                {
+                    $push: { posts: postAfter._id }
+                },
+                { returnOriginal: false }
+            )
+            return res.status(200).json({ postAfter, message: success });
         }
     } catch (error) {
         return res.status(500).json({
@@ -230,12 +307,21 @@ export const createPostAnonymously = async (req, res, next) => {
     post.author_avatar = user.avatar;
     post.username = "Ẩn danh";
     post.hideName = true;
+    post.group_id = req.body.group_id;
     post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
     post.videos = req.files.filter(v => _.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
-    post.save(function (err) {
-        if (err) { return next(err); }
-        return res.status(200).json({ post, message: success });
-    });
+    const postAfter = await post.save();
+    if (!postAfter) {
+        return res.json({ message: 'Đăng bài không thành công!' });
+    }
+    await Group.findByIdAndUpdate(
+        { _id: req.body.group_id },
+        {
+            $push: { posts: postAfter._id }
+        },
+        { returnOriginal: false }
+    )
+    return res.status(200).json({ postAfter, message: success });
 }
 
 export const createPostAnonymouslyCosts = async (req, res, next) => {
@@ -252,6 +338,7 @@ export const createPostAnonymouslyCosts = async (req, res, next) => {
             post.username = "Ẩn danh";
             post.hideName = true;
             post.costs = true;
+            post.group_id = req.body.group_id;
             post.coins = req.body.coins;
             post.expired = req.body.expired;
             post.images = req.files.filter(v => !_.includes(v.path, ".mp4")).map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""));
@@ -261,10 +348,18 @@ export const createPostAnonymouslyCosts = async (req, res, next) => {
                 { _id: req.user.user_id },
                 { coins: coinsAfterPost }
             );
-            post.save(function (err) {
-                if (err) { return next(err); }
-                return res.status(200).json({ post, message: success });
-            });
+            const postAfter = await post.save();
+            if (!postAfter) {
+                return res.json({ message: 'Đăng bài không thành công!' });
+            }
+            await Group.findByIdAndUpdate(
+                { _id: req.body.group_id },
+                {
+                    $push: { posts: postAfter._id }
+                },
+                { returnOriginal: false }
+            )
+            return res.status(200).json({ postAfter, message: success });
         }
     } catch (error) {
         return res.status(500).json({
