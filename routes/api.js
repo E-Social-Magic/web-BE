@@ -2,6 +2,7 @@ import express from 'express';
 const router = express.Router();
 import passport from '../config/passport.js';
 import * as userController from '../app/http/controllers/user.js';
+import * as followController from '../app/http/controllers/follow.js';
 import * as postController from '../app/http/controllers/post.js';
 import * as helperController from '../app/http/controllers/helper.js';
 import * as commentController from '../app/http/controllers/comment.js';
@@ -54,21 +55,23 @@ import auth from './auth.js';
 
 // User
   router.get('/user/info/:id', verifyToken, [userController.userInfo]); // get one
-  router.get('/user/info', verifyToken, [userController.userInfoPerson]); // get one
-  router.get('/user/:id/info', verifyToken, [userController.userInfoForAd]); // get one for admin 
-  router.get('/users', verifyToken, [userController.getAllUser]); // get all user for admin
+  router.get('/user/info', verifyToken, [userController.userInfo]); // get one
   router.post('/user/:id/edit', verifyToken, userController.editAccount); // update user
   router.post('/user/:id/block', verifyToken, userController.blockUser); // block user
+  router.put('/user/:id/follow', verifyToken, followController.follow); // block user
+
+// Admin
+  router.get('/users', verifyToken, [userController.getAllUser]); // get all user for admin
+  router.get('/user/:id/info', verifyToken, [userController.userInfoForAd]); // get one for admin 
+  router.get('/posts/admin', verifyToken, postController.listPostForAd); // get all post for admin
+  router.get('/post/:id/admin', verifyToken, postController.detailPostForAd); // get one for admin 
+  router.post('/post/:id/block', verifyToken, postController.blockPost); // block post
 
 // Post 
   router.get('/posts', postController.listPost); // get all post 
-  router.get('/posts/:group_id', postController.listPostGroup); // get all post 
-  router.get('/posts/admin', verifyToken, postController.listPostForAd); // get all post for admin
   router.get('/post/:id', postController.detailPost); // get one 
-  router.get('/post/:id/admin', verifyToken, postController.detailPostForAd); // get one for admin 
   router.get('/post/:id/vote', verifyToken, postController.vote); // function vote
   router.post('/post/new', verifyToken, postController.createPost); // create post 
-  router.post('/post/:id/block', verifyToken, postController.blockPost); // block post
   router.put('/post/:id/edit', verifyToken, postController.editPost); // update post
   router.delete('/post/:id', verifyToken, postController.deletePost); // delete post
 

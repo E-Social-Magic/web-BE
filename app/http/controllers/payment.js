@@ -29,7 +29,7 @@ export const depositCoins = async (req, res) => {
         data.signature = createHmac('sha256', data.secretkey)
             .update(rawSignature)
             .digest('hex');
-        data.lang = "en";
+        data.lang = "vi";
         await axios.post(API_MOMO + '/create',
             data,
             {
@@ -111,7 +111,7 @@ export const detailPayment = async (req, res) => {
             data.accessKey = ACCESS_KEY;
             data.requestId = payment.requestId;
             data.orderId = payment.orderId;
-            data.lang = "en";
+            data.lang = "vi";
             var rawSignature = "accessKey=" + data.accessKey + "&orderId=" + data.orderId + "&partnerCode=" + data.partnerCode + "&requestId=" + data.requestId;
             data.signature = createHmac('sha256', SECRET_KEY)
                 .update(rawSignature)
@@ -196,12 +196,11 @@ export const confirmReq = async (req, res) => {
     try {
         if (req.user.role === "admin") {
             const success = req.query.success;
-            const fail = req.query.fail;
             const payment = await Payment_out.findById({ _id: req.params.id });
             const admin = await User.findById({ _id: req.user.user_id });
             const user = await User.findById({ _id: payment.user_id })
-            if (!success && !fail) {
-                return res.json("Không có truy vấn")
+            if (!success) {
+                return res.json({payment, message: "Hoàn thành"})
             }
             if (success == "true") {
                 const coinsOfAdmin = admin.coins + payment.amount;
@@ -218,13 +217,13 @@ export const confirmReq = async (req, res) => {
                     { _id: req.params.id },
                     {
                         resultCode: "0",
-                        message: "Giao dịch thành công."
+                        message: "Thành công."
                     },
                     { returnOriginal: false }
                 );
                 return res.json({ reqSuccess, message: "Thanh toán thành công!" });
             }
-            if (fail == "true") {
+            if (success == "false") {
                 const reqFail = await Payment_out.findOneAndUpdate(
                     { _id: req.params.id },
                     {

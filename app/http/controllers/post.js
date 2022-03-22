@@ -39,66 +39,30 @@ export const listPost = [
                     message: success
                 });
             }
+            if(req.query.group_id){
+                const posts = await Post.find({
+                    $and: [
+                        { blocked: { $ne: true } },
+                        { private: { $ne: true } },
+                        { group_id: req.query.group_id }
+                    ]
+                })
+                    .limit(limit * 1)
+                    .skip((offset - 1) * limit)
+                    .exec();
+                const count = await Post.countDocuments();
+                return res.json({
+                    posts,
+                    totalPages: Math.ceil(count / limit),
+                    currentPage: offset,
+                    message: success
+                });
+            }
             else {
                 const posts = await Post.find({
                     $and: [
                         { blocked: { $ne: true } },
                         { private: { $ne: true } }
-                    ]
-                })
-                    .limit(limit * 1)
-                    .skip((offset - 1) * limit)
-                    .exec();
-                const count = await Post.countDocuments();
-                return res.json({
-                    posts,
-                    totalPages: Math.ceil(count / limit),
-                    currentPage: offset,
-                    message: success
-                });
-            }
-        } catch (error) {
-            return res.status(500).json({
-                message: `Lỗi: ${error}`,
-            });
-        }
-    },
-]
-
-export const listPostGroup = [
-    async (req, res) => {
-        const { offset = 1, limit = 10 } = req.query;
-        try {
-            if (req.query.search) {
-                const posts = await Post.find({
-                    $and: [
-                        { blocked: { $ne: true } },
-                        { private: { $ne: true } }, ,
-                        { group_id: req.params.group_id },
-                        {
-                            $text: {
-                                $search: req.query.search
-                            }
-                        }
-                    ]
-                })
-                    .limit(limit * 1)
-                    .skip((offset - 1) * limit)
-                    .exec();
-                const count = await Post.countDocuments();
-                return res.json({
-                    posts,
-                    totalPages: Math.ceil(count / limit),
-                    currentPage: offset,
-                    message: success
-                });
-            }
-            else {
-                const posts = await Post.find({
-                    $and: [
-                        { blocked: { $ne: true } },
-                        { private: { $ne: true } },
-                        { group_id: req.params.group_id }
                     ]
                 })
                     .limit(limit * 1)
@@ -206,13 +170,13 @@ export const createPost = [
     uploadImage.array("files"),
     async (req, res, next) => {
         if (!req.body.title) {
-            return res.json("Tiêu đề không được để trống.")
+            return res.json({message: "Tiêu đề không được để trống."})
         }
         if (!req.body.content) {
-            return res.json("Nội dung không được để trống.")
+            return res.json({message:"Nội dung không được để trống."})
         }
         if (!req.body.group_id) {
-            return res.json("Hãy chọn nhóm mà bạn muốn đăng bài.")
+            return res.json({message:"Hãy chọn nhóm mà bạn muốn đăng bài."})
         }
         const group_id = new ObjectId(req.body.group_id);
         const user = await User.findOne({ _id: req.user.user_id });

@@ -1,5 +1,7 @@
 import db from '../../models/index.model.js';
 const { Group } = db;
+import mongoose from 'mongoose';
+var ObjectId = mongoose.Types.ObjectId;
 import _ from 'lodash';
 import multer from 'multer';
 import { storageImages } from '../../../config/multer.js';
@@ -17,26 +19,37 @@ const uploadImage = multer({
 });
 
 export const listGroup = [async (req, res) => {
-    // destructure offset and limit and set default values
     const { offset = 1, limit = 10 } = req.query;
-
     try {
-        // execute query with offset and limit values
-        const groups = await Group.find()
-            .limit(limit * 1)
-            .skip((offset - 1) * limit)
-            .exec();
-
-        // get total documents in the Group collection 
-        const count = await Group.countDocuments();
-
-        // return response with groups, total offsets, and current offset
-        res.json({
-            groups,
-            totalPages: Math.ceil(count / limit),
-            currentPage: offset,
-            message: success
-        });
+        if (req.query.user_id) {
+            const user_id = new ObjectId(req.query.user_id);
+            const groups = await Group.find(
+                { "user_id" : user_id }
+            )
+                .limit(limit * 1)
+                .skip((offset - 1) * limit)
+                .exec();
+            const count = await Group.countDocuments();
+            res.json({
+                groups,
+                totalPages: Math.ceil(count / limit),
+                currentPage: offset,
+                message: success
+            });
+        }
+        else {
+            const groups = await Group.find()
+                .limit(limit * 1)
+                .skip((offset - 1) * limit)
+                .exec();
+            const count = await Group.countDocuments();
+            res.json({
+                groups,
+                totalPages: Math.ceil(count / limit),
+                currentPage: offset,
+                message: success
+            });
+        }
     } catch (error) {
         return res.status(500).json({
             message: `Lỗi: ${error}`,
@@ -49,10 +62,7 @@ export function detailGroup(req, res) {
         Group.findById(req.params.id).exec(function (err, group) {
             if (err) { return res.json({ err }) }
             return res.json({
-                group_name: group.group_name,
-                subject: group.subject,
-                private_dt: group.private_dt,
-                avatar: group.avatar,
+                group: group,
                 message: success
             });
         })

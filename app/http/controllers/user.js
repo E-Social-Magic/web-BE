@@ -1,5 +1,5 @@
 import db from '../../models/index.model.js';
-const { User, Post } = db;
+const { User, Post, Payment, Payment_out } = db;
 import sendMail from '../../../config/sendMail.js';
 import bcrypt from 'bcryptjs';
 import validator from 'express-validator';
@@ -54,19 +54,33 @@ export const getAllUser = async (req, res) => {
 }
 
 export const userInfo = async (req, res) => {
-    if (req.params.id === req.user.user_id) {
-        let user = await User.findOne({ _id: req.user.user_id }, { password: 0 })
-        return res.json({ user: user, message: success });
+    if (req.params.id) {
+        const posts = await Post.find({ user_id: req.params.id });
+        let sizePosts = posts.length;
+        const user = await User.findOne({ _id: req.params.id }, { password: 0, payment_id: 0, role: 0 })
+        return res.json({ user: user, sizePosts, message: success });
     }
     else {
-        let user = await User.findOne({ _id: req.params.id }, { password: 0, payment_id: 0, role: 0 })
-        return res.json({ user: user, message: success });
+        const user = await User.findOne({ _id: req.user.user_id }, { password: 0 });
+        const posts = await Post.find({ user_id: req.user.user_id });
+        const helped = await Post.find({ "comments.user_id": req.user.user_id, "comments.correct": true });
+        const paymentIn = await Payment.find({user_id: req.user.user_id});
+        const paymentOut = await Payment_out.find({user_id: req.user.user_id});
+        let payment = [].concat(paymentIn, paymentOut);
+        let sizePosts = posts.length;
+        let sizeHelped = helped.length;
+        let images = [];
+        let videos = [];
+        posts.map((post) => images.push(...post.images));
+        posts.map((post) => videos.push(...post.videos));
+        return res.json({ user: user, sizePosts, sizeHelped, payment, images, videos, message: success });
+        
     }
 };
 
 export const userInfoPerson = async (req, res) => {
-        const user = await User.findOne({ _id: req.user.user_id }, { password: 0 })
-        return res.json({ user: user, message: success });
+    const user = await User.findOne({ _id: req.user.user_id }, { password: 0 })
+    return res.json({ user: user, message: success });
 };
 
 export const userInfoForAd = async (req, res) => {
@@ -141,10 +155,10 @@ export const createAccount = [
                 }
                 user.role = "user";
                 const userAfter = await user.save();
-                if(!userAfter){
+                if (!userAfter) {
                     return res.json({ message: 'Đăng ký không thành công!' });
                 }
-                else{
+                else {
                     req.user = {};
                     req.user.user_id = userAfter._id
                     await createSubject(req, res);
@@ -176,13 +190,13 @@ export const editAccount = [
                 data.address = req.body.address;
             }
             if (phone) {
-                data.address = req.body.phone;
+                data.phone = req.body.phone;
             }
             if (description) {
-                data.address = req.body.description;
+                data.description = req.body.description;
             }
             if (level) {
-                data.address = req.body.level;
+                data.level = req.body.level;
             }
             const user = await User.findOneAndUpdate(
                 { _id: req.params.id, user_id: req.user.user_id },
@@ -324,3 +338,4 @@ export async function markCorrectAnswer(req, res) {
         });
     }
 }
+
