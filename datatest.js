@@ -19,7 +19,7 @@ var groups = []
 function userCreate(username, password, email, avatar, cb) {
     if(avatar == ""){
         var uppercaseFirstLetter = username.charAt(0).toUpperCase();
-        avatar = "https://web-be-brmc9.ondigitalocean.app" + generateAvatar(uppercaseFirstLetter, "avatarP").replace("./public", "");
+        avatar = req.protocol + "://" + req.headers.host + generateAvatar(uppercaseFirstLetter, "avatarP").replace("./public", "");
     }
     bcrypt.hash(password, 10, (err, hash) => {
         var user = new User({
@@ -55,10 +55,9 @@ function postCreate(title, content, user_id, username, author_avatar, cb) {
 }
 
 function groupCreate(group_name, subject, image, cb) {
-    const listUsers = [users[0]._id,users[2]._id,users[1]._id];
     if(image == ""){
         var uppercaseFirstLetter = group_name.charAt(0).toUpperCase();
-        image = "https://web-be-brmc9.ondigitalocean.app" + generateAvatar(uppercaseFirstLetter, "avatarG").replace("./public", "");
+        image = req.protocol + "://" + req.headers.host + generateAvatar(uppercaseFirstLetter, "avatarG").replace("./public", "");
     }
     var group = new Group({
         group_name: group_name,

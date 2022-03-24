@@ -8,9 +8,9 @@ var success = "Hoàn thành!";
 export const createSubject = async (req, res) => {
         try {
             if(!(req.body.subjects instanceof Array)){
-                return res.status(400).end();
+                return res.status(400).json({message: "Bạn chưa chọn nhóm", error: true});
             }
-            const groups = await Group.find({ _id: req.body.subjects });
+            const groups = await Group.find({ _id: {$in: req.body.subjects} });
             const arr = groups.map(group => group._id);
             await Group.updateMany(
                 { _id:{$in: arr}},

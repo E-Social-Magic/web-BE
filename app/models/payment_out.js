@@ -11,6 +11,7 @@ const schema = new mongoose.Schema(
         user_id: { type: String, required: true },
         username: { type: String, required: true },
         displayName: { type: String, required: true },
+        accountBalance: {type: Number, required: false },
         type: { type: String, required: true, enum: ['in', 'out']},
     },
     { timestamps: true }

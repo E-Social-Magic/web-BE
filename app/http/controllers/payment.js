@@ -20,8 +20,10 @@ export const depositCoins = async (req, res) => {
         data.requestId = data.partnerCode + new Date().getTime();
         data.orderId = data.requestId;
         data.orderInfo = "Pay with MoMo";
-        data.redirectUrl = "http://localhost:3001/api/notify";
-        data.ipnUrl = "http://localhost:3001/api/notify";
+        // data.redirectUrl = "http://localhost:3001/api/return";
+        // data.ipnUrl = "http://localhost:3001/api/notify";
+        data.redirectUrl = "https://web-be-2-idkrb.ondigitalocean.app/api/return";
+        data.ipnUrl = "https://web-be-2-idkrb.ondigitalocean.app/api/notify";
         data.amount = req.body.amount;
         data.requestType = "captureWallet";
         data.extraData = user_id;
@@ -50,7 +52,7 @@ export const depositCoins = async (req, res) => {
 
 export const processTransaction = async (req, res) => {
     try {
-        const data = req.query;
+        const data = req.body;
         const user = await User.findById({ _id: data.extraData });
         const payment = new Payment();
         payment.requestId = data.requestId;
@@ -61,20 +63,21 @@ export const processTransaction = async (req, res) => {
         payment.user_id = data.extraData;
         payment.username = user.username;
         payment.type = "in";
-        payment.save(function (err) {
-            if (err) { return next(err); }
-        });
+        payment.accountBalance = user.coins;
         if (data.resultCode == 0) {
+            let paymentAfter = await payment.save();
             const user = await User.findById(data.extraData);
-            let coinsUser = user.coins + data.amount
+            let coinsUser = user.coins + Number(data.amount)
             await User.findByIdAndUpdate({ _id: data.extraData },
                 { coins: coinsUser },
                 { returnOriginal: false }
             )
+            await Payment.findByIdAndUpdate({_id: paymentAfter.id}, {accountBalance: coinsUser})
             return res.json({message: "Thanh toán thành công!"});
         }
         else {
-            return res.json({message: "Thanh toán không thành công!"})
+            payment.save();
+            return res.json({message: "Thanh toán không thành công!"});
         }
     } catch (error) {
         return res.status(500).json({
@@ -91,6 +94,7 @@ export const listPayment = async (req, res) => {
             .skip((offset - 1) * limit)
             .exec();
         const count = await Payment.countDocuments();
+        payments.sort((a, b) => b.createdAt - a.createdAt)
         res.json({
             payments,
             totalPages: Math.ceil(count / limit),
@@ -148,6 +152,7 @@ export const listPaymentOut = [async (req, res) => {
             .skip((offset - 1) * limit)
             .exec();
         const count = await Payment_out.countDocuments();
+        payments.sort((a, b) => b.createdAt - a.createdAt)
         res.json({
             payments,
             totalPages: Math.ceil(count / limit),
@@ -220,7 +225,8 @@ export const confirmReq = async (req, res) => {
                     { _id: req.params.id },
                     {
                         resultCode: "0",
-                        message: "Thành công."
+                        message: "Thành công.",
+                        accountBalance: coinsOfUser
                     },
                     { returnOriginal: false }
                 );
@@ -231,7 +237,8 @@ export const confirmReq = async (req, res) => {
                     { _id: req.params.id },
                     {
                         resultCode: "1003",
-                        message: "Giao dịch bị đã bị hủy."
+                        message: "Giao dịch bị đã bị hủy.",
+                        accountBalance: user.coins
                     },
                     { returnOriginal: false }
                 );

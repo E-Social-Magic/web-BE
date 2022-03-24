@@ -32,6 +32,7 @@ export const listPost = [
                     .skip((offset - 1) * limit)
                     .exec();
                 const count = await Post.countDocuments();
+                posts.sort((a, b) => b.createdAt - a.createdAt)
                 return res.json({
                     posts,
                     totalPages: Math.ceil(count / limit),
@@ -51,6 +52,7 @@ export const listPost = [
                     .skip((offset - 1) * limit)
                     .exec();
                 const count = await Post.countDocuments();
+                posts.sort((a, b) => b.createdAt - a.createdAt)
                 return res.json({
                     posts,
                     totalPages: Math.ceil(count / limit),
@@ -69,6 +71,7 @@ export const listPost = [
                     .skip((offset - 1) * limit)
                     .exec();
                 const count = await Post.countDocuments();
+                posts.sort((a, b) => b.createdAt - a.createdAt)
                 return res.json({
                     posts,
                     totalPages: Math.ceil(count / limit),
@@ -94,6 +97,7 @@ export const listPostForAd = [
                     .skip((offset - 1) * limit)
                     .exec();
                 const count = await Post.countDocuments();
+                posts.sort((a, b) => b.createdAt - a.createdAt)
                 return res.json({
                     posts,
                     totalPages: Math.ceil(count / limit),
@@ -111,6 +115,7 @@ export const listPostForAd = [
                     .skip((offset - 1) * limit)
                     .exec();
                 const count = await Post.countDocuments();
+                posts.sort((a, b) => b.createdAt - a.createdAt)
                 return res.json({
                     posts, totalPages: Math.ceil(count / limit),
                     currentPage: offset, message: success

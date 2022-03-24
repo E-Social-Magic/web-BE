@@ -23,6 +23,8 @@ const schema = new mongoose.Schema(
   { timestamps: true }
 );
 
+schema.index({ username: 'text', email: 'text', address: 'text' });
+
 schema.method('toJSON', function () {
   const { __v, _id, ...object } = this.toObject();
   object.id = _id;

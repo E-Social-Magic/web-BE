@@ -30,6 +30,7 @@ export const listGroup = [async (req, res) => {
                 .skip((offset - 1) * limit)
                 .exec();
             const count = await Group.countDocuments();
+            groups.sort((a, b) => b.createdAt - a.createdAt)
             res.json({
                 groups,
                 totalPages: Math.ceil(count / limit),
@@ -43,6 +44,7 @@ export const listGroup = [async (req, res) => {
                 .skip((offset - 1) * limit)
                 .exec();
             const count = await Group.countDocuments();
+            groups.sort((a, b) => b.createdAt - a.createdAt)
             res.json({
                 groups,
                 totalPages: Math.ceil(count / limit),

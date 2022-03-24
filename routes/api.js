@@ -14,10 +14,10 @@ import verifyToken from '../app/http/middlewares/auth.js';
 import auth from './auth.js';
 
 // Đăng ký
-  // router.get('/signup',
-  //   function (req, res, next) {
-  //     res.json({ title: "Create Account", message: "Get UI for Create Account" });
-  //   });
+  router.get('/return',
+    function (req, res, next) {
+      res.json({ title: "Thanh toán thành công" });
+    });
   router.post('/signup', userController.userValidator, userController.createAccount);
   // router.post('/signup', userController.signup);
 
@@ -61,7 +61,7 @@ import auth from './auth.js';
   router.put('/user/:id/follow', verifyToken, followController.follow); // block user
 
 // Admin
-  router.get('/users', verifyToken, [userController.getAllUser]); // get all user for admin
+  router.get('/users', verifyToken, userController.getAllUser); // get all user for admin
   router.get('/user/:id/info', verifyToken, [userController.userInfoForAd]); // get one for admin 
   router.get('/posts/admin', verifyToken, postController.listPostForAd); // get all post for admin
   router.get('/post/:id/admin', verifyToken, postController.detailPostForAd); // get one for admin 
@@ -84,7 +84,7 @@ import auth from './auth.js';
   router.get('/payment/:id', verifyToken, paymentController.detailPayment); // get one
   router.post('/withdraw', verifyToken, paymentController.withdrawCoins); // gửi req withdraw coins
   router.get('/withdraw/:id', verifyToken, paymentController.confirmReq); // get one
-  router.get('/notify', paymentController.processTransaction); // callback
+  router.post('/notify', paymentController.processTransaction); // callback
 
 // Comment
   router.put('/post/:id/comment', verifyToken, commentController.createComment); // create comment

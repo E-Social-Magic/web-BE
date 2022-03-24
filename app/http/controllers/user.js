@@ -26,10 +26,35 @@ const uploadImage = multer({
     }
 });
 
-export const getAllUser = async (req, res) => {
+export const getAllUser = [async (req, res) => {
     const { offset = 1, limit = 10 } = req.query;
     try {
-        if (req.user.role == "admin") {
+        if (req.query.search && req.user.role == "admin") {
+            const users = await User.find({
+                $and: [
+                    { role: { $ne: "admin" } },
+                    {
+                        $text: {
+                            $search: req.query.search
+                        }
+                    },
+                ],
+            },
+                { password: 0 }
+            )
+                .limit(limit * 1)
+                .skip((offset - 1) * limit)
+                .exec();
+            const count = await User.countDocuments();
+            users.sort((a, b) => b.createdAt - a.createdAt)
+            res.json({
+                users,
+                totalPages: Math.ceil(count / limit),
+                currentPage: offset,
+                message: success
+            });
+        }
+        else if (req.user.role == "admin") {
             const users = await User.find(
                 { role: { $ne: "admin" } },
                 { password: 0 }
@@ -38,20 +63,22 @@ export const getAllUser = async (req, res) => {
                 .skip((offset - 1) * limit)
                 .exec();
             const count = await User.countDocuments();
+            users.sort((a, b) => b.createdAt - a.createdAt)
             res.json({
                 users,
                 totalPages: Math.ceil(count / limit),
                 currentPage: offset,
                 message: success
             });
+        } else {
+            return res.status(403).json({ message: noPermission });
         }
-        return res.status(403).json({ message: noPermission });
     } catch (error) {
         return res.status(500).json({
             message: `Lỗi: ${error}`,
         });
     }
-}
+}]
 
 export const userInfo = async (req, res) => {
     if (req.params.id) {
@@ -64,23 +91,19 @@ export const userInfo = async (req, res) => {
         const user = await User.findOne({ _id: req.user.user_id }, { password: 0 });
         const posts = await Post.find({ user_id: req.user.user_id });
         const helped = await Post.find({ "comments.user_id": req.user.user_id, "comments.correct": true });
-        const paymentIn = await Payment.find({user_id: req.user.user_id});
-        const paymentOut = await Payment_out.find({user_id: req.user.user_id});
+        const paymentIn = await Payment.find({ user_id: req.user.user_id });
+        const paymentOut = await Payment_out.find({ user_id: req.user.user_id });
         let payment = [].concat(paymentIn, paymentOut);
         let sizePosts = posts.length;
         let sizeHelped = helped.length;
         let images = [];
         let videos = [];
+        payment.sort((a, b) => b.createdAt - a.createdAt);
         posts.map((post) => images.push(...post.images));
         posts.map((post) => videos.push(...post.videos));
         return res.json({ user: user, sizePosts, sizeHelped, payment, images, videos, message: success });
-        
-    }
-};
 
-export const userInfoPerson = async (req, res) => {
-    const user = await User.findOne({ _id: req.user.user_id }, { password: 0 })
-    return res.json({ user: user, message: success });
+    }
 };
 
 export const userInfoForAd = async (req, res) => {
@@ -97,6 +120,18 @@ export const userValidator = [
     body('email')
         .not().isEmpty().withMessage('Email không được để trống.')
         .isEmail().withMessage('Không đúng định dạng email.'),
+    check('email')
+        .isEmail()
+        .custom((value, { req }) => {
+            return new Promise((resolve, reject) => {
+                User.findOne({ email: req.body.email }, function (err, user) {
+                    if (Boolean(user)) {
+                        reject(new Error('Email đã được sử dụng'))
+                    }
+                    resolve(true)
+                });
+            });
+        }),
     body('password')
         .notEmpty().withMessage('Mật khẩu không được để trống.')
         .isLength({ min: 6 }).withMessage('Mật khẩu tối thiểu có 6 kí tự'),
@@ -159,9 +194,8 @@ export const createAccount = [
                     return res.json({ message: 'Đăng ký không thành công!' });
                 }
                 else {
-                    req.user = {};
-                    req.user.user_id = userAfter._id
-                    await createSubject(req, res);
+                    return res.json({ message: 'Đăng ký thành công!' });
+
                 }
                 // var subject = "Notice of successful registrationThanks "
                 // var view = "<h2>Welcome</h2><p>You have successfully registered</p>";
@@ -295,17 +329,14 @@ export async function markCorrectAnswer(req, res) {
     try {
         const commentId = new ObjectId(req.params.commentId);
         const checkCorrect = await Post.findOne({
-            _id: req.params.id,
-            user_id: req.user.user_id, // Chủ bài viết 
-            "comments.correct": true,
-            costs: true
+            _id: req.params.id,// Chủ bài viết 
         });
-        if (checkCorrect) {
+        if (checkCorrect.comments.find(v => v.correct == true)) {
             return res.json({ message: "Đã đánh dấu 1 câu trả lời đúng trước đó!" })
         }
-        else {
+        else if (checkCorrect.user_id === req.user.user_id) {
             const post = await Post.findOneAndUpdate(
-                { "comments._id": commentId },
+                { user_id: req.user.user_id, "comments._id": commentId },
                 {
                     $set: {
                         "comments.$.correct": true,
@@ -328,6 +359,8 @@ export async function markCorrectAnswer(req, res) {
             );
             if (post)
                 return res.json({ user_id, message: 'Đánh dấu câu trả lời đúng thành công!' });
+        }
+        else {
             return res.status(403).json({
                 message: `Không thể đánh dấu câu trả lời đúng. Có thể không tìm thấy bài đăng hoặc Không có quyền!`,
             });
