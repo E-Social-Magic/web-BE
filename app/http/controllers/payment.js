@@ -56,17 +56,19 @@ export const processTransaction = async (req, res) => {
         payment.requestId = data.requestId;
         payment.orderId = data.orderId;
         payment.amount = data.amount;
-        payment.responseTime = data.responseTime;
         payment.message = data.message;
         payment.resultCode = data.resultCode;
         payment.user_id = data.extraData;
         payment.username = user.username;
+        payment.type = "in";
         payment.save(function (err) {
             if (err) { return next(err); }
         });
         if (data.resultCode == 0) {
+            const user = await User.findById(data.extraData);
+            let coinsUser = user.coins + data.amount
             await User.findByIdAndUpdate({ _id: data.extraData },
-                { coins: data.amount },
+                { coins: coinsUser },
                 { returnOriginal: false }
             )
             return res.json({message: "Thanh toán thành công!"});
@@ -180,6 +182,7 @@ export const withdrawCoins = async (req, res) => {
         data.phone = req.body.phone;
         data.resultCode = "7000";
         data.message = "Giao dịch đang được xử lý.";
+        data.type = "out";
         data.displayName = req.body.displayName;
         data.save(function (err) {
             if (err) { return next(err); }

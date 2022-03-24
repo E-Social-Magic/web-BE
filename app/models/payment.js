@@ -5,11 +5,11 @@ const schema = new mongoose.Schema(
         requestId: {type: String, required: true },
         orderId: {type: String, required: true },
         amount: {type: String, required: true },
-        responseTime: {type: String, required: true },
         message: {type: String, required: true },
         resultCode: {type: String, required: true },
         user_id: {type: String, required: true },
-        username: {type: String, required: true }
+        username: {type: String, required: true },
+        type: { type: String, required: true, enum: ['in', 'out']},
     },
     { timestamps: true }
 );
