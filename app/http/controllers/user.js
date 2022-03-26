@@ -91,9 +91,7 @@ export const userInfo = async (req, res) => {
         const user = await User.findOne({ _id: req.user.user_id }, { password: 0 });
         const posts = await Post.find({ user_id: req.user.user_id });
         const helped = await Post.find({ "comments.user_id": req.user.user_id, "comments.correct": true });
-        const paymentIn = await Payment.find({ user_id: req.user.user_id });
-        const paymentOut = await Payment_out.find({ user_id: req.user.user_id });
-        let payment = [].concat(paymentIn, paymentOut);
+        const payment = await Payment.find({ user_id: req.user.user_id });
         let sizePosts = posts.length;
         let sizeHelped = helped.length;
         let images = [];

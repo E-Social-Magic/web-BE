@@ -38,7 +38,10 @@ export const createComment = [
                             username: req.user.username,
                             correct: false,
                             images: images,
-                            avatar: user.avatar
+                            avatar: user.avatar,
+                            vote: 0,
+                            voteups: [],
+                            votedowns: []
                         }
                     }
                 },
@@ -61,7 +64,7 @@ export async function editComment(req, res) {
     try {
         const commentID = new ObjectId(req.params.commentId);
         const posts = await Post.findOneAndUpdate(
-            { _id: req.params.id, "comments.user_id": req.user.user_id, "comments._id": commentID },
+            { _id: req.params.id, "comments._id": commentID },
             {
                 $set: {
                     "comments.$.comment": req.body.comment,
@@ -100,4 +103,85 @@ export async function deleteComment(req, res) {
         });
     }
 
+}
+
+export const vote = async (req, res, next) => {
+    try {
+        const userId = req.user.user_id;
+        const postId = req.params.id;
+        const commentId = new ObjectId(req.params.commentId)
+        const up = req.query.up;
+        const down = req.query.down;
+        // case 1 neu query up =true
+        const post = await Post.findById(postId);
+        //case 1 thiếu query
+        if (!up && !down) {
+            return res.json("Nothing to do")
+        }
+        // case 2 neu query up = true
+        if (up == "true") {
+            if (post.voteups.includes(userId)) {
+                // xoa user do ra khoi array
+                await Post.findOneAndUpdate(
+                    { _id: req.params.id },
+                    {
+                        $pull: {
+                            "voteups": userId
+                        }
+                    },
+                    { returnOriginal: false }
+                );
+            } else {
+                //them user do vao array
+                await Post.findOneAndUpdate(
+                    { _id: req.params.id },
+                    {
+                        $push: {
+                            voteups: userId
+                        }
+                    },
+                    { returnOriginal: false }
+                );
+            }
+        }
+        // case 3 neu query down = true
+        if (down == "true") {
+            if (post.votedowns.includes(userId)) {
+                // xoa user do ra khoi array
+                await Post.findOneAndUpdate(
+                    { _id: req.params.id },
+                    {
+                        $pull: {
+                            "votedowns": userId
+                        }
+                    },
+                    { returnOriginal: false }
+                );
+            } else {
+                //them user do vao array
+                await Post.findOneAndUpdate(
+                    { _id: req.params.id },
+                    {
+                        $push: {
+                            votedowns: userId
+                        }
+                    },
+                    { returnOriginal: false }
+                );
+            }
+        }
+        const newpost = await Post.findById(postId);
+        const { votedowns, voteups } = newpost;
+        const votes = voteups.length - votedowns.length;
+        await Post.findOneAndUpdate(
+            { _id: req.params.id },
+            { votes: votes },
+            { returnOriginal: false }
+        );
+        return res.json({ votes, message: success });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Lỗi: ${error}`,
+        });
+    }
 }

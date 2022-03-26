@@ -1,5 +1,5 @@
 import db from '../../models/index.model.js';
-const { User, Payment, Payment_out } = db;
+const { User, Payment } = db;
 import { createHmac } from 'crypto';
 import axios from 'axios';
 import env from '../../../config/config.js';
@@ -89,7 +89,9 @@ export const processTransaction = async (req, res) => {
 export const listPayment = async (req, res) => {
     const { offset = 1, limit = 10 } = req.query;
     try {
-        const payments = await Payment.find()
+        const payments = await Payment.find({
+            type: "in"
+        })
             .limit(limit * 1)
             .skip((offset - 1) * limit)
             .exec();
@@ -144,14 +146,16 @@ export const detailPayment = async (req, res) => {
     }
 }
 
-export const listPaymentOut = [async (req, res) => {
+export const listPaymentOut = async (req, res) => {
     const { offset = 1, limit = 10 } = req.query;
     try {
-        const payments = await Payment_out.find()
+        const payments = await Payment.find({
+            type: "out"
+        })
             .limit(limit * 1)
             .skip((offset - 1) * limit)
             .exec();
-        const count = await Payment_out.countDocuments();
+        const count = await Payment.countDocuments();
         payments.sort((a, b) => b.createdAt - a.createdAt)
         res.json({
             payments,
@@ -164,7 +168,7 @@ export const listPaymentOut = [async (req, res) => {
             message: `Lỗi: ${error}`,
         });
     }
-}]
+}
 //Rút coins
 export const withdrawCoins = async (req, res) => {
     try {
@@ -178,7 +182,7 @@ export const withdrawCoins = async (req, res) => {
         if (!req.body.amount || req.body.amount < 10000 || req.body.amount > user.coins ) {
             return res.json({ message: "Số tiền bạn nhập phải lớn hơn 10.000 VNĐ và nhỏ hơn số tiền bạn đang có!" });
         }
-        const data = new Payment_out(req.body);
+        const data = new Payment(req.body);
         data.requestId = PARTNER_CODE + new Date().getTime();
         data.orderId = data.requestId;
         data.amount = req.body.amount;
@@ -189,6 +193,12 @@ export const withdrawCoins = async (req, res) => {
         data.message = "Giao dịch đang được xử lý.";
         data.type = "out";
         data.displayName = req.body.displayName;
+        const coinsOfUser = user.coins - data.amount;
+        data.accountBalance = coinsOfUser;
+        await User.findByIdAndUpdate(
+            { _id: req.user.user_id },
+            { coins: coinsOfUser }
+        );
         data.save(function (err) {
             if (err) { return next(err); }
             return res.json({ data, message: "Vui lòng đợi phản hồi từ Admin" })
@@ -204,7 +214,7 @@ export const confirmReq = async (req, res) => {
     try {
         if (req.user.role === "admin") {
             const success = req.query.success;
-            const payment = await Payment_out.findById({ _id: req.params.id });
+            const payment = await Payment.findById({ _id: req.params.id });
             const admin = await User.findById({ _id: req.user.user_id });
             const user = await User.findById({ _id: payment.user_id })
             if (!success) {
@@ -212,33 +222,32 @@ export const confirmReq = async (req, res) => {
             }
             if (success == "true") {
                 const coinsOfAdmin = admin.coins + payment.amount;
-                const coinsOfUser = user.coins - payment.amount;
                 await User.findByIdAndUpdate(
                     { _id: req.user.user_id },
                     { coins: coinsOfAdmin }
                 );
-                await User.findByIdAndUpdate(
-                    { _id: payment.user_id },
-                    { coins: coinsOfUser }
-                );
-                const reqSuccess = await Payment_out.findOneAndUpdate(
+                const reqSuccess = await Payment.findOneAndUpdate(
                     { _id: req.params.id },
                     {
                         resultCode: "0",
-                        message: "Thành công.",
-                        accountBalance: coinsOfUser
+                        message: "Thành công."
                     },
                     { returnOriginal: false }
                 );
                 return res.json({ reqSuccess, message: "Thanh toán thành công!" });
             }
             if (success == "false") {
-                const reqFail = await Payment_out.findOneAndUpdate(
+                const coinsOfUser = user.coins + payment.amount;
+                await User.findByIdAndUpdate(
+                    { _id: payment.user_id },
+                    { coins: coinsOfUser }
+                );
+                const reqFail = await Payment.findOneAndUpdate(
                     { _id: req.params.id },
                     {
                         resultCode: "1003",
                         message: "Giao dịch bị đã bị hủy.",
-                        accountBalance: user.coins
+                        accountBalance: coinsOfUser
                     },
                     { returnOriginal: false }
                 );
