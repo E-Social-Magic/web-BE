@@ -89,6 +89,7 @@ import auth from './auth.js';
 // Comment
   router.put('/post/:id/comment', verifyToken, commentController.createComment); // create comment
   router.put('/post/:id/comment/:commentId/edit', verifyToken, commentController.editComment); // update comment
+  router.get('/post/:id/vote/:commentId', verifyToken, commentController.vote);
   router.put('/post/:id/comment/:commentId/markCorrect', verifyToken, userController.markCorrectAnswer); // mark correct answer
   router.delete('/post/:id/comment/:commentId', verifyToken, commentController.deleteComment); // delete comment
 

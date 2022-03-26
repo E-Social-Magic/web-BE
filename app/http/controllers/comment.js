@@ -8,14 +8,15 @@ import path from "path";
 import { storageImages } from '../../../config/multer.js';
 var success = "Hoàn thành!";
 
-const uploadImage = multer({ storage: storageImages, 
+const uploadImage = multer({
+    storage: storageImages,
     fileFilter: function (req, file, done) {
         var ext = path.extname(file.originalname);
-        if(ext !== '.png' && ext !== '.jpg' && ext !== '.gif' && ext !== '.jpeg') {
+        if (ext !== '.png' && ext !== '.jpg' && ext !== '.gif' && ext !== '.jpeg') {
             return done(new Error('Only images are allowed'))
         }
         done(null, true)
-      }
+    }
 });
 
 export const createComment = [
@@ -23,7 +24,7 @@ export const createComment = [
     async (req, res) => {
         try {
             let images = [];
-            if(req.files.length){
+            if (req.files.length) {
                 images = req.files.map((file) => req.protocol + "://" + req.headers.host + file.path.replace("public", ""))
             }
             const user = await User.findById(req.user.user_id);
@@ -39,7 +40,7 @@ export const createComment = [
                             correct: false,
                             images: images,
                             avatar: user.avatar,
-                            vote: 0,
+                            voteups: 0,
                             voteups: [],
                             votedowns: []
                         }
@@ -70,9 +71,9 @@ export async function editComment(req, res) {
                     "comments.$.comment": req.body.comment,
                 }
             },
-            {passRawResult : true, returnOriginal: false }
+            { passRawResult: true, returnOriginal: false }
         );
-        if (_.find(posts.comments,{_id:commentID,comment:req.body.comment}))
+        if (_.find(posts.comments, { _id: commentID, comment: req.body.comment }))
             return res.json({ posts, message: success });
         return res.status(403).json({
             message: `Không thể sửa bình luận. Bình luận không tồn tại hoặc Không có sự cho phép!`,
@@ -89,7 +90,7 @@ export async function deleteComment(req, res) {
         const commentID = new ObjectId(req.params.commentId);
         const post = await Post.findOneAndUpdate(
             { _id: req.params.id, "comments.user_id": req.user.user_id },
-            { $pull: { "comments": {_id: commentID}}},
+            { $pull: { "comments": { _id: commentID } } },
             { returnOriginal: false }
         );
         if (post)
@@ -112,73 +113,48 @@ export const vote = async (req, res, next) => {
         const commentId = new ObjectId(req.params.commentId)
         const up = req.query.up;
         const down = req.query.down;
-        // case 1 neu query up =true
         const post = await Post.findById(postId);
-        //case 1 thiếu query
+        let updatedPost
         if (!up && !down) {
             return res.json("Nothing to do")
         }
-        // case 2 neu query up = true
         if (up == "true") {
-            if (post.voteups.includes(userId)) {
-                // xoa user do ra khoi array
-                await Post.findOneAndUpdate(
-                    { _id: req.params.id },
-                    {
-                        $pull: {
-                            "voteups": userId
-                        }
-                    },
-                    { returnOriginal: false }
+            if (post.comments.find(v => v.voteups.includes(userId))) {
+                updatedPost = await Post.findByIdAndUpdate(
+                    { _id: postId },
+                    { $pull: { "comments.$[id].voteups": userId } },
+                    { arrayFilters: [{ "id._id": commentId }], returnOriginal: false }
                 );
             } else {
-                //them user do vao array
-                await Post.findOneAndUpdate(
-                    { _id: req.params.id },
-                    {
-                        $push: {
-                            voteups: userId
-                        }
-                    },
-                    { returnOriginal: false }
+                updatedPost = await Post.findByIdAndUpdate(
+                    { _id: postId },
+                    { $push: { "comments.$[id].voteups": userId } },
+                    { arrayFilters: [{ "id._id": commentId }], returnOriginal: false }
                 );
             }
         }
-        // case 3 neu query down = true
         if (down == "true") {
-            if (post.votedowns.includes(userId)) {
-                // xoa user do ra khoi array
-                await Post.findOneAndUpdate(
-                    { _id: req.params.id },
-                    {
-                        $pull: {
-                            "votedowns": userId
-                        }
-                    },
-                    { returnOriginal: false }
+            if (post.comments.find(v => v.votedowns.includes(userId))) {
+                updatedPost = await Post.findByIdAndUpdate(
+                    { _id: postId },
+                    { $pull: { "comments.$[id].votedowns": userId } },
+                    { arrayFilters: [{ "id._id": commentId }], returnOriginal: false }
                 );
             } else {
-                //them user do vao array
-                await Post.findOneAndUpdate(
-                    { _id: req.params.id },
-                    {
-                        $push: {
-                            votedowns: userId
-                        }
-                    },
-                    { returnOriginal: false }
+                updatedPost = await Post.findByIdAndUpdate(
+                    { _id: postId },
+                    { $push: { "comments.$[id].votedowns": userId } },
+                    { arrayFilters: [{ "id._id": commentId }], returnOriginal: false }
                 );
             }
         }
-        const newpost = await Post.findById(postId);
-        const { votedowns, voteups } = newpost;
-        const votes = voteups.length - votedowns.length;
-        await Post.findOneAndUpdate(
-            { _id: req.params.id },
-            { votes: votes },
-            { returnOriginal: false }
+        let { voteups, votedowns } = _.find(updatedPost.comments, { _id: commentId })
+        const postUpdate = await Post.findByIdAndUpdate(
+            { _id: postId },
+            { $set: { "comments.$[id].votes": voteups.length - votedowns.length } },
+            { arrayFilters: [{ "id._id": commentId }], returnOriginal: false }
         );
-        return res.json({ votes, message: success });
+        return res.json({ post: postUpdate, message: success });
     } catch (error) {
         return res.status(500).json({
             message: `Lỗi: ${error}`,
