@@ -22,25 +22,12 @@ export const listGroup = [async (req, res) => {
     const { offset = 1, limit = 10 } = req.query;
     try {
         if (req.query.user_id) {
-            const user_id = new ObjectId(req.query.user_id);
-            const groups = await Group.find(
-                { blocked: { $ne: true } },
-                { "users" : user_id }
-            )
-                .limit(limit * 1)
-                .skip((offset - 1) * limit)
-                .exec();
-            const count = await Group.countDocuments();
-            groups.sort((a, b) => b.createdAt - a.createdAt)
-            res.json({
-                groups,
-                totalPages: Math.ceil(count / limit),
-                currentPage: offset,
-                message: success
-            });
-        }
-        else if(req.user.role === "admin") {
-            const groups = await Group.find()
+            const groups = await Group.find({
+                $and: [
+                    { blocked: { $ne: true } },
+                    { "users" : req.query.user_id }
+                ]
+            })
                 .limit(limit * 1)
                 .skip((offset - 1) * limit)
                 .exec();
@@ -60,6 +47,30 @@ export const listGroup = [async (req, res) => {
                     { private: { $ne: true } }
                 ]
             })
+                .limit(limit * 1)
+                .skip((offset - 1) * limit)
+                .exec();
+            const count = await Group.countDocuments();
+            groups.sort((a, b) => b.createdAt - a.createdAt)
+            res.json({
+                groups,
+                totalPages: Math.ceil(count / limit),
+                currentPage: offset,
+                message: success
+            });
+        }
+    } catch (error) {
+        return res.status(500).json({
+            message: `Lỗi: ${error}`,
+        });
+    }
+}]
+
+export const listGroupForAd = [async (req, res) => {
+    const { offset = 1, limit = 10 } = req.query;
+    try {
+        if(req.user.role == "admin" ) {
+            const groups = await Group.find()
                 .limit(limit * 1)
                 .skip((offset - 1) * limit)
                 .exec();

@@ -292,6 +292,7 @@ export const createPaymentInCoins = async (req, res, next) => {
         });
     }
 }
+
 export const createPaymentOutCoins = async (req, res, next) => {
     try {
         if (req.owner.resultCode == 0) {

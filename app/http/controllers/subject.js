@@ -11,11 +11,11 @@ export const createSubject = async (req, res) => {
                 return res.status(400).json({message: "Bạn chưa chọn nhóm", error: true});
             }
             const groups = await Group.find({ _id: {$in: req.body.subjects} });
-            const arr = groups.map(group => group._id);
+            const arr = groups.map(group => group._id.toString());
             await Group.updateMany(
                 { _id:{$in: arr}},
                 {
-                 $push: {users: req.user.user_id}
+                 $push: {users: req.user.user_id.toString()}
                 },
                 { returnOriginal: false }
             )
@@ -46,11 +46,11 @@ export async function editSubject(req, res) {
             return res.status(400).end();
         }
         const groups = await Group.find({ _id: {$in: req.body.subjects} });
-        const arr = groups.map(group => group._id);
+        const arr = groups.map(group => group._id.toString());
         await Group.updateMany(
             { _id:{$in: arr}},
             {
-             $push: {users: req.user.user_id}
+             $push: {users: req.user.user_id.toString()}
             },
             { returnOriginal: false }
         )

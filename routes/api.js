@@ -99,6 +99,7 @@ import auth from './auth.js';
 
 // Group
   router.get('/groups', groupController.listGroup); // get all group
+  router.get('/groups', verifyToken, groupController.listGroupForAd); // get all group
   router.get('/group/:id', verifyToken, groupController.detailGroup); // get one group
   router.post('/group/new', verifyToken, groupController.createGroup); // create group
   router.put('/group/:id/edit', verifyToken, groupController.editGroup); // update group
