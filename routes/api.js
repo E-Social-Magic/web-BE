@@ -9,14 +9,13 @@ import * as commentController from '../app/http/controllers/comment.js';
 import * as subjectController from '../app/http/controllers/subject.js';
 import * as groupController from '../app/http/controllers/group.js';
 import * as paymentController from '../app/http/controllers/payment.js';
-// import * as privateDataController from '../app/http/controllers/private_data.js';
 import verifyToken from '../app/http/middlewares/auth.js';
 import auth from './auth.js';
 
 // Đăng ký
   router.get('/return',
     function (req, res, next) {
-      res.json({ title: "Thanh toán thành công" });
+      res.json({ title: "Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi" });
     });
   router.post('/signup', userController.userValidator, userController.createAccount);
   // router.post('/signup', userController.signup);
@@ -69,7 +68,7 @@ import auth from './auth.js';
 
 // Post 
   router.get('/posts', postController.listPost); // get all post 
-  router.get('/post/:id', postController.detailPost); // get one 
+  router.get('/post/:id', verifyToken, postController.detailPost); // get one 
   router.get('/post/:id/vote', verifyToken, postController.vote); // function vote
   router.post('/post/new', verifyToken, postController.createPost); // create post 
   router.put('/post/:id/edit', verifyToken, postController.editPost); // update post
@@ -90,12 +89,17 @@ import auth from './auth.js';
   router.put('/post/:id/comment', verifyToken, commentController.createComment); // create comment
   router.put('/post/:id/comment/:commentId/edit', verifyToken, commentController.editComment); // update comment
   router.get('/post/:id/vote/:commentId', verifyToken, commentController.vote);
-  router.put('/post/:id/comment/:commentId/markCorrect', verifyToken, userController.markCorrectAnswer); // mark correct answer
+  router.put('/post/:id/comment/:commentId/markCorrect', verifyToken, userController.markCorrectAnswer, paymentController.createPaymentInCoins, paymentController.createPaymentOutCoins, 
+  function (req, res) {
+    if(req.helper.resultCode == 0 && req.owner.resultCode == 0){
+      res.json({ message: "Đánh dấu câu trả lời đúng thành công!" });
+    }
+  }); // mark correct answer
   router.delete('/post/:id/comment/:commentId', verifyToken, commentController.deleteComment); // delete comment
 
 // Group
   router.get('/groups', groupController.listGroup); // get all group
-  router.get('/group/:id', groupController.detailGroup); // get one group
+  router.get('/group/:id', verifyToken, groupController.detailGroup); // get one group
   router.post('/group/new', verifyToken, groupController.createGroup); // create group
   router.put('/group/:id/edit', verifyToken, groupController.editGroup); // update group
   router.delete('/group/:id', verifyToken, groupController.deleteGroup); // delete group
@@ -105,11 +109,5 @@ import auth from './auth.js';
   router.put('/subject/:id/edit', verifyToken, subjectController.editSubject); // update group & user
   router.delete('/subject/:id', verifyToken, subjectController.deleteSubject); // delete user trong group & ngược lại 
 
-// Private data
-  // router.get('/private_datas', privateDataController.listPrivateData);
-  // router.get('/private_data/:id', privateDataController.deletePrivateData);
-  // router.post('/private_data/new', verifyToken, privateDataController.createPrivateData);
-  // router.put('/private_data/:id/edit', verifyToken, privateDataController.editPrivateData);
-  // router.delete('/private_data/:id', verifyToken, privateDataController.deletePrivateData);
 
 export default router;

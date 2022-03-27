@@ -18,7 +18,7 @@ export const follow = async (req, res) => {
         if (follow == "true") {
             if (user.following.includes(ownerId)) {
                 // xoa user do ra khoi array
-                await User.findOneAndUpdate(
+                await User.findByIdAndUpdate(
                     { _id: ownerId },
                     {
                         $pull: {
@@ -27,7 +27,7 @@ export const follow = async (req, res) => {
                     },
                     { returnOriginal: false }
                 );
-                await User.findOneAndUpdate(
+                await User.findByIdAndUpdate(
                     { _id: userId },
                     {
                         $pull: {
@@ -38,7 +38,7 @@ export const follow = async (req, res) => {
                 );
             } else {
                 //them user do vao array
-                await User.findOneAndUpdate(
+                await User.findByIdAndUpdate(
                     { _id: ownerId },
                     {
                         $push: {
@@ -47,7 +47,7 @@ export const follow = async (req, res) => {
                     },
                     { returnOriginal: false }
                 );
-                await User.findOneAndUpdate(
+                await User.findByIdAndUpdate(
                     { _id: userId },
                     {
                         $push: {

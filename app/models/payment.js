@@ -13,6 +13,7 @@ const schema = new mongoose.Schema(
         username: { type: String, required: true },
         displayName: { type: String, required: false },
         type: { type: String, required: true, enum: ['in', 'out'] },
+        typeTransfer: { type: String, required: true, enum: ['momo', 'coins'] },
     },
     { timestamps: true }
 );

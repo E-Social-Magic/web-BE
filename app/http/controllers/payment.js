@@ -63,6 +63,7 @@ export const processTransaction = async (req, res) => {
         payment.user_id = data.extraData;
         payment.username = user.username;
         payment.type = "in";
+        payment.typeTransfer = "momo";
         payment.accountBalance = user.coins;
         if (data.resultCode == 0) {
             let paymentAfter = await payment.save();
@@ -72,12 +73,12 @@ export const processTransaction = async (req, res) => {
                 { coins: coinsUser },
                 { returnOriginal: false }
             )
-            await Payment.findByIdAndUpdate({_id: paymentAfter.id}, {accountBalance: coinsUser})
-            return res.json({message: "Thanh toán thành công!"});
+            await Payment.findByIdAndUpdate({ _id: paymentAfter.id }, { accountBalance: coinsUser })
+            return res.json({ message: "Thanh toán thành công!" });
         }
         else {
             payment.save();
-            return res.json({message: "Thanh toán không thành công!"});
+            return res.json({ message: "Thanh toán không thành công!" });
         }
     } catch (error) {
         return res.status(500).json({
@@ -179,7 +180,7 @@ export const withdrawCoins = async (req, res) => {
         if (!req.body.displayName) {
             return res.json({ message: "Vui lòng nhập tên hiển thị trên MOMO" })
         }
-        if (!req.body.amount || req.body.amount < 10000 || req.body.amount > user.coins ) {
+        if (!req.body.amount || req.body.amount < 10000 || req.body.amount > user.coins) {
             return res.json({ message: "Số tiền bạn nhập phải lớn hơn 10.000 VNĐ và nhỏ hơn số tiền bạn đang có!" });
         }
         const data = new Payment(req.body);
@@ -192,6 +193,7 @@ export const withdrawCoins = async (req, res) => {
         data.resultCode = "7000";
         data.message = "Giao dịch đang được xử lý.";
         data.type = "out";
+        data.typeTransfer = "momo";
         data.displayName = req.body.displayName;
         const coinsOfUser = user.coins - data.amount;
         data.accountBalance = coinsOfUser;
@@ -218,7 +220,7 @@ export const confirmReq = async (req, res) => {
             const admin = await User.findById({ _id: req.user.user_id });
             const user = await User.findById({ _id: payment.user_id })
             if (!success) {
-                return res.json({payment, message: "Hoàn thành"})
+                return res.json({ payment, message: "Hoàn thành" })
             }
             if (success == "true") {
                 const coinsOfAdmin = admin.coins + payment.amount;
@@ -226,7 +228,7 @@ export const confirmReq = async (req, res) => {
                     { _id: req.user.user_id },
                     { coins: coinsOfAdmin }
                 );
-                const reqSuccess = await Payment.findOneAndUpdate(
+                const reqSuccess = await Payment.findByIdAndUpdate(
                     { _id: req.params.id },
                     {
                         resultCode: "0",
@@ -242,7 +244,7 @@ export const confirmReq = async (req, res) => {
                     { _id: payment.user_id },
                     { coins: coinsOfUser }
                 );
-                const reqFail = await Payment.findOneAndUpdate(
+                const reqFail = await Payment.findByIdAndUpdate(
                     { _id: req.params.id },
                     {
                         resultCode: "1003",
@@ -262,6 +264,62 @@ export const confirmReq = async (req, res) => {
     }
 }
 
+export const createPaymentInCoins = async (req, res, next) => {
+    try {
+        if (req.helper.resultCode == 0) {
+            const data = new Payment(req.helper);
+            data.requestId = PARTNER_CODE + new Date().getTime();
+            data.orderId = data.requestId;
+            data.amount = req.helper.amount;
+            data.user_id = req.helper.user_id;
+            data.username = req.helper.username;
+            data.resultCode = "0";
+            data.message = "Giao dịch thành công.";
+            data.type = "in";
+            data.typeTransfer = "coins";
+            const coinsOfUser = data.amount;
+            data.accountBalance = coinsOfUser;
+            await User.findByIdAndUpdate(
+                { _id: req.helper.user_id },
+                { coins: coinsOfUser }
+            );
+            data.save();
+            next()
+        }
+    } catch (error) {
+        return res.status(500).json({
+            message: `Lỗi: ${error}`,
+        });
+    }
+}
+export const createPaymentOutCoins = async (req, res, next) => {
+    try {
+        if (req.owner.resultCode == 0) {
+            const data = new Payment(req.owner);
+            data.requestId = PARTNER_CODE + new Date().getTime();
+            data.orderId = data.requestId;
+            data.amount = req.owner.amount;
+            data.user_id = req.owner.user_id;
+            data.username = req.owner.username;
+            data.resultCode = "0";
+            data.message = "Giao dịch thành công.";
+            data.type = "out";
+            data.typeTransfer = "coins";
+            const coinsOfUser = data.amount;
+            data.accountBalance = coinsOfUser;
+            await User.findByIdAndUpdate(
+                { _id: req.owner.user_id },
+                { coins: coinsOfUser }
+            );
+            data.save();
+            next()
+        }
+    } catch (error) {
+        return res.status(500).json({
+            message: `Lỗi: ${error}`,
+        });
+    }
+}
 /* 
 Tạo yêu cầu rút tiền 
 Ad đọc và xác nhận yêu cầu rút tiền 

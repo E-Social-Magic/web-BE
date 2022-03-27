@@ -10,7 +10,7 @@ import _ from 'lodash';
 import multer from 'multer';
 import { storageImages } from '../../../config/multer.js';
 import { generateAvatar } from './generator.js';
-import { createSubject } from './subject.js';
+import { createPaymentInCoins, createPaymentOutCoins } from './payment.js';
 var code;
 var success = "Hoàn thành!";
 var noPermission = "Không có quyền truy cập!";
@@ -298,14 +298,14 @@ export const blockUser = async (req, res, next) => {
             const userId = req.params.id;
             const user = await User.findById(userId);
             if (user.blocked == true) {
-                const userUnblock = await User.findOneAndUpdate(
+                const userUnblock = await User.findByIdAndUpdate(
                     { _id: req.params.id },
                     { blocked: false },
                     { returnOriginal: false }
                 );
                 return res.json({ blocked: userUnblock.blocked, message: 'Tài khoản đã được mở khóa.' });
             } else {
-                const userBlock = await User.findOneAndUpdate(
+                const userBlock = await User.findByIdAndUpdate(
                     { _id: req.params.id },
                     { blocked: true },
                     { returnOriginal: false }
@@ -323,50 +323,54 @@ export const blockUser = async (req, res, next) => {
     }
 }
 
-export async function markCorrectAnswer(req, res) {
-    try {
-        const commentId = new ObjectId(req.params.commentId);
-        const checkCorrect = await Post.findOne({
-            _id: req.params.id,// Chủ bài viết 
-        });
-        if (checkCorrect.comments.find(v => v.correct == true)) {
-            return res.json({ message: "Đã đánh dấu 1 câu trả lời đúng trước đó!" })
-        }
-        else if (checkCorrect.user_id === req.user.user_id) {
-            const post = await Post.findOneAndUpdate(
-                { user_id: req.user.user_id, "comments._id": commentId },
-                {
-                    $set: {
-                        "comments.$.correct": true,
-                    }
-                },
-                { passRawResult: true, returnOriginal: false }
-            );
-            const { user_id } = post.comments.find(v => v.correct == true);
-            const owner = await User.findById({ _id: post.user_id });
-            const user = await User.findById({ _id: user_id });
-            const coinsOfOwner = owner.coins + ((10 / 100) * post.coins);
-            const coinsOfHelper = user.coins + (post.coins - ((10 / 100) * post.coins));
-            await User.findByIdAndUpdate(
-                { _id: user_id },
-                { coins: coinsOfHelper }
-            );
-            await User.findByIdAndUpdate(
-                { _id: post.user_id },
-                { coins: coinsOfOwner }
-            );
-            if (post)
-                return res.json({ user_id, message: 'Đánh dấu câu trả lời đúng thành công!' });
-        }
-        else {
-            return res.status(403).json({
-                message: `Không thể đánh dấu câu trả lời đúng. Có thể không tìm thấy bài đăng hoặc Không có quyền!`,
+export const markCorrectAnswer = [
+    async (req, res, next) => {
+        try {
+            const commentId = new ObjectId(req.params.commentId);
+            const checkCorrect = await Post.findById(req.params.id);
+            if (checkCorrect.comments.find(v => v.correct == true)) {
+                return res.json({ message: "Đã đánh dấu 1 câu trả lời đúng trước đó!" })
+            }
+            else if (checkCorrect.user_id === req.user.user_id) {
+                const post = await Post.findByIdAndUpdate(
+                    { _id: req.params.id },
+                    {
+                        $set: {
+                            "comments.$[id].correct": true,
+                        }
+                    },
+                    { passRawResult: true, arrayFilters: [{ "id._id": commentId }], returnOriginal: false }
+                );
+
+                const { user_id } = post.comments.find(v => v.correct == true);
+                const owner = await User.findById({ _id: post.user_id });
+                const helper = await User.findById({ _id: user_id });
+                const coinsOfOwner = owner.coins + ((10 / 100) * post.coins);
+                const coinsOfHelper = helper.coins + (post.coins - ((10 / 100) * post.coins));
+                req.owner = {}
+                req.owner.user_id = post.user_id
+                req.owner.username = owner.username
+                req.owner.amount = coinsOfOwner
+                req.owner.resultCode = 0
+                req.helper = {}
+                req.helper.user_id = user_id
+                req.helper.username = helper.username
+                req.helper.amount = coinsOfHelper
+                req.helper.resultCode = 0
+                if (post)
+                    next()
+                // return res.json({ owner: owner.coins, helper: helper.coins, message: 'Đánh dấu câu trả lời đúng thành công!' });
+            }
+            else {
+                return res.status(403).json({
+                    message: `Không thể đánh dấu câu trả lời đúng. Có thể không tìm thấy bài đăng hoặc Không có quyền!`,
+                });
+            }
+        } catch (error) {
+            return res.status(500).json({
+                message: `Lỗi: ${error}`,
             });
         }
-    } catch (error) {
-        return res.status(500).json({
-            message: `Lỗi: ${error}`,
-        });
-    }
-}
+    },
 
+]

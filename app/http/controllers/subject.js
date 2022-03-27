@@ -15,7 +15,7 @@ export const createSubject = async (req, res) => {
             await Group.updateMany(
                 { _id:{$in: arr}},
                 {
-                 $push: {user_id: req.user.user_id}
+                 $push: {users: req.user.user_id}
                 },
                 { returnOriginal: false }
             )
@@ -45,12 +45,12 @@ export async function editSubject(req, res) {
         if(!(req.body.subjects instanceof Array)){
             return res.status(400).end();
         }
-        const groups = await Group.find({ _id: req.body.subjects });
+        const groups = await Group.find({ _id: {$in: req.body.subjects} });
         const arr = groups.map(group => group._id);
         await Group.updateMany(
             { _id:{$in: arr}},
             {
-             $push: {user_id: req.user.user_id}
+             $push: {users: req.user.user_id}
             },
             { returnOriginal: false }
         )
@@ -84,7 +84,7 @@ export async function deleteSubject(req, res) {
         await Group.updateMany(
             { _id:{$in: arr}},
             {
-             $pull: {user_id: req.user.user_id}
+             $pull: {users: req.user.user_id}
             },
             { returnOriginal: false }
         )

@@ -17,7 +17,7 @@ var posts = []
 var groups = []
 
 function userCreate(username, password, email, avatar, cb) {
-    if(avatar == ""){
+    if (avatar == "") {
         var uppercaseFirstLetter = username.charAt(0).toUpperCase();
         avatar = req.protocol + "://" + req.headers.host + generateAvatar(uppercaseFirstLetter, "avatarP").replace("./public", "");
     }
@@ -41,9 +41,15 @@ function userCreate(username, password, email, avatar, cb) {
     });
 }
 
-function postCreate(title, content, user_id, username, author_avatar, cb) {
-    
-    var post = new Post({ title: title, content: content, user_id: user_id, username: username, author_avatar: author_avatar });
+function postCreate(title, content, user_id, group_id, username, author_avatar, cb) {
+    var post = new Post({
+        title: title,
+        content: content,
+        user_id: user_id,
+        username: username,
+        author_avatar: author_avatar,
+        group_id: group_id
+    });
     post.save(function (err) {
         if (err) {
             cb(err, null);
@@ -55,7 +61,7 @@ function postCreate(title, content, user_id, username, author_avatar, cb) {
 }
 
 function groupCreate(group_name, subject, image, cb) {
-    if(image == ""){
+    if (image == "") {
         var uppercaseFirstLetter = group_name.charAt(0).toUpperCase();
         image = req.protocol + "://" + req.headers.host + generateAvatar(uppercaseFirstLetter, "avatarG").replace("./public", "");
     }
@@ -63,7 +69,6 @@ function groupCreate(group_name, subject, image, cb) {
         group_name: group_name,
         subject: subject,
         avatar: image,
-        user_id: listUsers
     });
     group.save(function (err) {
         if (err) {
@@ -74,9 +79,35 @@ function groupCreate(group_name, subject, image, cb) {
         cb(null, group)
     });
 }
-
-function createGroupAuthors(cb) {
-    async.series([
+function joinGroup(user_id, listGroups, res) {
+    try {
+        if (!(listGroups instanceof Array)) {
+            return res.status(400).end();
+        }
+        const groups = await Group.find({ _id: { $in: listGroups } });
+        const arr = groups.map(group => group._id);
+        await Group.updateMany(
+            { _id: { $in: arr } },
+            {
+                $push: { users: user_id }
+            },
+            { returnOriginal: false }
+        )
+        const user = await User.findOneAndUpdate(
+            { _id: user_id },
+            {
+                subjects: arr
+            },
+            { returnOriginal: false }
+        );
+        return console.log({mes: "Join group done"});
+    } catch (error) {
+        return console.log({error});
+    }
+    
+}
+function createGroupAuthorsPosts(cb) {
+    async.parallel([
         function (callback) {
             userCreate('Tanjiro', '123456', 'tojro1@gmail.com', '', callback);
         },
@@ -95,63 +126,58 @@ function createGroupAuthors(cb) {
         function (callback) {
             groupCreate("Anh", "Anh", "", callback);
         },
+
         function (callback) {
-            groupCreate("Lí", "Lí", "", callback);
+            postCreate('Toán', '(a^2 - b^2) = ?', users[2]._id, groups[0]._id, users[2].username, users[2].avatar, callback);
         },
         function (callback) {
-            groupCreate("Hóa", "Hóa", "", callback);
+            postCreate('Anh', 'Khi nào dùng "hear" khi nào dùng "listen"?', users[1]._id, groups[2]._id, users[1].username, users[1].avatar, callback);
         },
         function (callback) {
-            groupCreate("Sinh", "Sinh", "", callback);
+            postCreate('Anh', 'Khi nào dùng When?', users[0]._id, groups[2]._id, users[0].username, users[0].avatar, callback);
         },
         function (callback) {
-            groupCreate("Sử", "Sử", "", callback);
+            postCreate('Văn', 'Tác phẩm nổi tiếng của Ngô Tất Tố tên là gì?', users[2]._id, groups[1]._id, users[2].username, users[2].avatar, callback);
         },
-        function (callback) {
-            groupCreate("Địa", "Địa", "", callback);
-        },
-        function (callback) {
-            groupCreate("GDCD", "GDCD", "", callback);
-        },
-        function (callback) {
-            groupCreate("GDQP", "GDQP", "", callback);
-        },
-        function (callback) {
-            groupCreate("Công nghệ", "Công nghệ", "", callback);
-        },
-        function (callback) {
-            groupCreate("Âm nhạc", "Nhạc", "", callback);
-        },
-        function (callback) {
-            groupCreate("Mỹ thuật", "Mỹ thuật", "", callback);
-        },
-        function (callback) {
-            groupCreate("Tin Học", "Tin học", "", callback);
-        },
+        // function (callback) {
+        //     groupCreate("Lí", "Lí", "", callback);
+        // },
+        // function (callback) {
+        //     groupCreate("Hóa", "Hóa", "", callback);
+        // },
+        // function (callback) {
+        //     groupCreate("Sinh", "Sinh", "", callback);
+        // },
+        // function (callback) {
+        //     groupCreate("Sử", "Sử", "", callback);
+        // },
+        // function (callback) {
+        //     groupCreate("Địa", "Địa", "", callback);
+        // },
+        // function (callback) {
+        //     groupCreate("GDCD", "GDCD", "", callback);
+        // },
+        // function (callback) {
+        //     groupCreate("GDQP", "GDQP", "", callback);
+        // },
+        // function (callback) {
+        //     groupCreate("Công nghệ", "Công nghệ", "", callback);
+        // },
+        // function (callback) {
+        //     groupCreate("Nhạc", "Nhạc", "", callback);
+        // },
+        // function (callback) {
+        //     groupCreate("Mỹ thuật", "Mỹ thuật", "", callback);
+        // },
+        // function (callback) {
+        //     groupCreate("Tin Học", "Tin học", "", callback);
+        // },
     ],
         cb);
 }
 
-function createPosts(cb) {
-    async.parallel([
-        function (callback) {
-            postCreate('Toán', '(a^2 - b^2) = ?', users[2]._id, users[2].username, users[2].avatar, callback);
-        },
-        function (callback) {
-            postCreate('Anh', 'What là gì?', users[1]._id, users[1].username, users[1].avatar, callback);
-        },
-        function (callback) {
-            postCreate('Anh', 'Khi nào dùng When?', users[0]._id, users[0].username, users[0].avatar, callback);
-        },
-        function (callback) {
-            postCreate('Sử', 'Ngày thành lập đảng là ngày bao nhiêu?', users[2]._id, users[2].username, users[2].avatar, callback);
-        },
-    ],
-        cb);
-}
 async.series([
-    createGroupAuthors,
-    createPosts,
+    createGroupAuthorsPosts,
 ],
     function (err, results) {
         if (err) {

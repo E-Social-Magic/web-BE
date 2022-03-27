@@ -24,7 +24,8 @@ export const listGroup = [async (req, res) => {
         if (req.query.user_id) {
             const user_id = new ObjectId(req.query.user_id);
             const groups = await Group.find(
-                { "user_id" : user_id }
+                { blocked: { $ne: true } },
+                { "users" : user_id }
             )
                 .limit(limit * 1)
                 .skip((offset - 1) * limit)
@@ -38,8 +39,27 @@ export const listGroup = [async (req, res) => {
                 message: success
             });
         }
-        else {
+        else if(req.user.role === "admin") {
             const groups = await Group.find()
+                .limit(limit * 1)
+                .skip((offset - 1) * limit)
+                .exec();
+            const count = await Group.countDocuments();
+            groups.sort((a, b) => b.createdAt - a.createdAt)
+            res.json({
+                groups,
+                totalPages: Math.ceil(count / limit),
+                currentPage: offset,
+                message: success
+            });
+        }
+        else {
+            const groups = await Group.find({
+                $and: [
+                    { blocked: { $ne: true } },
+                    { private: { $ne: true } }
+                ]
+            })
                 .limit(limit * 1)
                 .skip((offset - 1) * limit)
                 .exec();
@@ -93,10 +113,8 @@ export const createGroup = [
                 var uppercaseFirstLetter = req.body.group_name.charAt(0).toUpperCase();
                 group.avatar = req.protocol + "://" + req.headers.host + generateAvatar(uppercaseFirstLetter, "avatarG").replace("./public", "");
             }
-            group.save(function (err) {
-                if (err) { return next(err); }
-                return res.status(200).json({ group, message: success });
-            });
+            group.save();
+            return res.status(200).json({ group, message: success });
         } catch (error) {
             return res.status(500).json({
                 message: `Lỗi: ${error}`,
@@ -117,7 +135,6 @@ export const editGroup = [
                 data,
                 { returnOriginal: false }
             );
-
             if (group)
                 return res.json({ group, message: success });
             return res.status(403).json({
@@ -136,4 +153,35 @@ export async function deleteGroup(req, res) {
         if (err) { return res.json({ err }) }
         return res.json({ message: success })
     });
+}
+
+export const blockGroup = async (req, res) => {
+    try {
+        if (req.user.role == "admin") {
+            const groupId = req.params.id;
+            const group = await Group.findByIdAndUpdate(groupId);
+            if (group.blocked == true) {
+                const groupUnblock = await Group.findByIdAndUpdate(
+                    { _id: groupId },
+                    { blocked: false },
+                    { returnOriginal: false }
+                );
+                return res.json({ blocked: groupUnblock.blocked, message: 'Nhóm đã được bỏ chặn thành công.' });
+            } else {
+                const groupBlock = await Group.findByIdAndUpdate(
+                    { _id: groupId },
+                    { blocked: true },
+                    { returnOriginal: false }
+                );
+                return res.json({ blocked: groupBlock.blocked, message: 'Nhóm đã bị chặn thành công.' });
+            }
+        }
+        return res.status(403).json({
+            message: `Không thể chặn nhóm. Có thể không tìm thấy nhóm hoặc Không có sự cho phép!`,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: `Lỗi: ${error}`,
+        });
+    }
 }

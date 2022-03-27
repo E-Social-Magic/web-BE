@@ -395,8 +395,8 @@ export const vote = async (req, res, next) => {
         if (up == "true") {
             if (post.voteups.includes(userId)) {
                 // xoa user do ra khoi array
-                await Post.findOneAndUpdate(
-                    { _id: req.params.id },
+                await Post.findByIdAndUpdate(
+                    { _id: postId },
                     {
                         $pull: {
                             "voteups": userId
@@ -406,8 +406,8 @@ export const vote = async (req, res, next) => {
                 );
             } else {
                 //them user do vao array
-                await Post.findOneAndUpdate(
-                    { _id: req.params.id },
+                await Post.findByIdAndUpdate(
+                    { _id: postId },
                     {
                         $push: {
                             voteups: userId
@@ -421,8 +421,8 @@ export const vote = async (req, res, next) => {
         if (down == "true") {
             if (post.votedowns.includes(userId)) {
                 // xoa user do ra khoi array
-                await Post.findOneAndUpdate(
-                    { _id: req.params.id },
+                await Post.findByIdAndUpdate(
+                    { _id: postId },
                     {
                         $pull: {
                             "votedowns": userId
@@ -432,8 +432,8 @@ export const vote = async (req, res, next) => {
                 );
             } else {
                 //them user do vao array
-                await Post.findOneAndUpdate(
-                    { _id: req.params.id },
+                await Post.findByIdAndUpdate(
+                    { _id: postId },
                     {
                         $push: {
                             votedowns: userId
@@ -446,8 +446,8 @@ export const vote = async (req, res, next) => {
         const newpost = await Post.findById(postId);
         const { votedowns, voteups } = newpost;
         const votes = voteups.length - votedowns.length;
-        await Post.findOneAndUpdate(
-            { _id: req.params.id },
+        await Post.findByIdAndUpdate(
+            { _id: postId },
             { votes: votes },
             { returnOriginal: false }
         );
@@ -465,15 +465,15 @@ export const blockPost = async (req, res) => {
             const postId = req.params.id;
             const post = await Post.findByIdAndUpdate(postId);
             if (post.blocked == true) {
-                const postUnblock = await Post.findOneAndUpdate(
-                    { _id: req.params.id },
+                const postUnblock = await Post.findByIdAndUpdate(
+                    { _id: postId },
                     { blocked: false },
                     { returnOriginal: false }
                 );
                 return res.json({ blocked: postUnblock.blocked, message: 'Bài đăng đã được bỏ chặn thành công.' });
             } else {
-                const postBlock = await Post.findOneAndUpdate(
-                    { _id: req.params.id },
+                const postBlock = await Post.findByIdAndUpdate(
+                    { _id: postId },
                     { blocked: true },
                     { returnOriginal: false }
                 );
