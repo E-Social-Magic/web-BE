@@ -22,7 +22,7 @@ export const depositCoins = async (req, res) => {
         data.orderInfo = "Pay with MoMo";
         // data.redirectUrl = "http://localhost:3001/api/return";
         // data.ipnUrl = "http://localhost:3001/api/notify";
-        data.redirectUrl = "https://web-be-2-idkrb.ondigitalocean.app/api/return";
+        data.redirectUrl = "http://e-social.site/?page_id=384";
         data.ipnUrl = "https://web-be-2-idkrb.ondigitalocean.app/api/notify";
         data.amount = req.body.amount;
         data.requestType = "captureWallet";
@@ -97,7 +97,7 @@ export const listPayment = async (req, res) => {
             .skip((offset - 1) * limit)
             .exec();
         const count = await Payment.countDocuments();
-        payments.sort((a, b) => b.createdAt - a.createdAt)
+        payments.sort((a, b) => b.updatedAt - a.updatedAt)
         res.json({
             payments,
             totalPages: Math.ceil(count / limit),
@@ -157,7 +157,7 @@ export const listPaymentOut = async (req, res) => {
             .skip((offset - 1) * limit)
             .exec();
         const count = await Payment.countDocuments();
-        payments.sort((a, b) => b.createdAt - a.createdAt)
+        payments.sort((a, b) => b.updatedAt - a.updatedAt)
         res.json({
             payments,
             totalPages: Math.ceil(count / limit),

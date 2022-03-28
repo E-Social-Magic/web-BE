@@ -13,10 +13,6 @@ import verifyToken from '../app/http/middlewares/auth.js';
 import auth from './auth.js';
 
 // Đăng ký
-  router.get('/return',
-    function (req, res, next) {
-      res.json({ title: "Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi" });
-    });
   router.post('/signup', userController.userValidator, userController.createAccount);
   // router.post('/signup', userController.signup);
 

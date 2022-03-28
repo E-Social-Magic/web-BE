@@ -41,14 +41,15 @@ function userCreate(username, password, email, avatar, cb) {
     });
 }
 
-function postCreate(title, content, user_id, group_id, username, author_avatar, cb) {
+function postCreate(title, content, user_id, group_id, username, author_avatar, images=[], cb) {
     var post = new Post({
         title: title,
         content: content,
         user_id: user_id,
         username: username,
         author_avatar: author_avatar,
-        group_id: group_id
+        group_id: group_id,
+        images: images
     });
     post.save(function (err) {
         if (err) {
@@ -61,10 +62,10 @@ function postCreate(title, content, user_id, group_id, username, author_avatar, 
 }
 
 function groupCreate(group_name, subject, image, cb) {
-    if (image == "") {
-        var uppercaseFirstLetter = group_name.charAt(0).toUpperCase();
-        image = "https://web-be-2-idkrb.ondigitalocean.app" + generateAvatar(uppercaseFirstLetter, "avatarG").replace("./public", "");
-    }
+    // if (image == "") {
+    //     var uppercaseFirstLetter = group_name.charAt(0).toUpperCase();
+    //     image = "https://web-be-2-idkrb.ondigitalocean.app" + generateAvatar(uppercaseFirstLetter, "avatarG").replace("./public", "");
+    // }
     var group = new Group({
         group_name: group_name,
         subject: subject,
@@ -106,55 +107,46 @@ async function joinGroup(user_id, listGroups, cb) {
 function createGroupAuthors(cb) {
     async.series([
         function (callback) {
-            userCreate('Tanjiro', '123456', 'tojro1@gmail.com', '', callback);
+            groupCreate("Toán Học", "Toán", "https://i.ibb.co/tP9k0Gx/t-i-xu-ng.jpg", callback);
         },
         function (callback) {
-            userCreate('Inosuke', '123456', 'tojro2@gmail.com', '', callback);
+            groupCreate("Ngữ Văn", "Văn", "https://i.ibb.co/wR8gzMV/unsplash-Rg-Kmrxp-Ira-Y.png", callback);
         },
         function (callback) {
-            userCreate('Zenitsu', '123456', "tojro3@gmail.com", '', callback);
+            groupCreate("Tiếng Anh", "Anh", "https://i.ibb.co/cwj2DQz/unsplash-vu-V25-Ofn-Ga8.png", callback);
         },
         function (callback) {
-            groupCreate("Toán", "Toán", "", callback);
+            groupCreate("Vật Lí", "Lí", "https://i.ibb.co/Mkv9kLq/t-i-xu-ng-3.jpg", callback);
         },
         function (callback) {
-            groupCreate("Văn", "Văn", "", callback);
+            groupCreate("Hóa Học", "Hóa", "https://i.ibb.co/zX0sqWh/t-i-xu-ng-1.jpg", callback);
         },
         function (callback) {
-            groupCreate("Anh", "Anh", "", callback);
+            groupCreate("Sinh Học", "Sinh", "https://i.ibb.co/fvPjnLR/t-i-xu-ng-2.jpg", callback);
         },
         function (callback) {
-            groupCreate("Lí", "Lí", "", callback);
+            groupCreate("Lịch Sử", "Sử", "https://i.ibb.co/27w1mBf/t-i-xu-ng-5.jpg", callback);
         },
         function (callback) {
-            groupCreate("Hóa", "Hóa", "", callback);
+            groupCreate("Địa Lí", "Địa", "https://i.ibb.co/DfQSbY9/t-i-xu-ng-4.jpg", callback);
         },
         function (callback) {
-            groupCreate("Sinh", "Sinh", "", callback);
+            groupCreate("Giáo Dục Công Dân", "GDCD", "https://i.ibb.co/bWnFFjK/unsplash-k4-N-ot-Bw-SRw.png", callback);
         },
         function (callback) {
-            groupCreate("Sử", "Sử", "", callback);
+            groupCreate("Giáo Dục Quốc Phòng", "GDQP", "https://i.ibb.co/2cKQSb4/unsplash-SOL1zqf-LV5-U.png", callback);
         },
         function (callback) {
-            groupCreate("Địa", "Địa", "", callback);
+            groupCreate("Công Nghệ", "Công nghệ", "https://i.ibb.co/7KJXw06/unsplash-7-Ja4-Pwtg69-U.png", callback);
         },
         function (callback) {
-            groupCreate("GDCD", "GDCD", "", callback);
+            groupCreate("Âm Nhạc", "Nhạc", "https://i.ibb.co/6m9h9jg/unsplash-YCQFgq-Oz-Lm-U.png", callback);
         },
         function (callback) {
-            groupCreate("GDQP", "GDQP", "", callback);
+            groupCreate("Mỹ thuật", "Mỹ thuật", "https://i.ibb.co/wwhtQpC/unsplash-yj-Xlyr-KIz2-A.png", callback);
         },
         function (callback) {
-            groupCreate("Công nghệ", "Công nghệ", "", callback);
-        },
-        function (callback) {
-            groupCreate("Nhạc", "Nhạc", "", callback);
-        },
-        function (callback) {
-            groupCreate("Mỹ thuật", "Mỹ thuật", "", callback);
-        },
-        function (callback) {
-            groupCreate("Tin Học", "Tin học", "", callback);
+            groupCreate("Tin Học", "Tin học", "https://i.ibb.co/9v4cZPB/unsplash-Cmv-A0x-CDf-C8.png", callback);
         },
     ],
         cb);
@@ -171,22 +163,22 @@ function createPosts(cb) {
             joinGroup(users[1]._id, [groups[0]._id, groups[2]._id, groups[1]._id, groups[3]._id, groups[4]._id, groups[5]._id], callback);
         },
         function (callback) {
-            postCreate('Toán', '(a^2 - b^2) = ?', users[2]._id, groups[0]._id, users[2].username, users[2].avatar, callback);
+            postCreate('Hằng đẳng thức đáng nhớ', '(a^2 - b^2) = ?', users[2]._id, groups[0]._id, users[2].username, users[2].avatar, [], callback);
         },
         function (callback) {
-            postCreate('Anh', 'Khi nào dùng "hear" khi nào dùng "listen"?', users[1]._id, groups[2]._id, users[1].username, users[1].avatar, callback);
+            postCreate('Tiếng Anh', 'Khi nào dùng "hear" khi nào dùng "listen"?', users[1]._id, groups[2]._id, users[1].username, users[1].avatar, [], callback);
         },
         function (callback) {
-            postCreate('Anh', 'Khi nào dùng When?', users[0]._id, groups[2]._id, users[0].username, users[0].avatar, callback);
+            postCreate('Giải bài tập Toán', 'Mình cần lời giải cho bài tập này', users[0]._id, groups[0]._id, users[0].username, users[0].avatar, ["https://i.ibb.co/Cb9CQ6Y/276943369-507296864326405-7290028347139541417-n.jpg"], callback);
         },
         function (callback) {
-            postCreate('Văn', 'Tác phẩm nổi tiếng của Ngô Tất Tố tên là gì?', users[2]._id, groups[1]._id, users[2].username, users[2].avatar, callback);
+            postCreate('Ôn tập lí', 'Mình có 1 đề lý để ôn tập các bạn có thể tham khảo bên cưới', users[2]._id, groups[4]._id, users[2].username, users[2].avatar, ["https://i.ibb.co/P54p81b/262812776-2275761469230517-3096170365263912502-n.png"], callback);
         },
     ], cb);
 }
 async.series([
     createGroupAuthors,
-    createPosts
+    // createPosts
 ],
     function (err, results) {
         if (err) {

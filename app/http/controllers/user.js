@@ -46,7 +46,7 @@ export const getAllUser = [async (req, res) => {
                 .skip((offset - 1) * limit)
                 .exec();
             const count = await User.countDocuments();
-            users.sort((a, b) => b.createdAt - a.createdAt)
+            users.sort((a, b) => b.updatedAt - a.updatedAt)
             res.json({
                 users,
                 totalPages: Math.ceil(count / limit),
@@ -63,7 +63,7 @@ export const getAllUser = [async (req, res) => {
                 .skip((offset - 1) * limit)
                 .exec();
             const count = await User.countDocuments();
-            users.sort((a, b) => b.createdAt - a.createdAt)
+            users.sort((a, b) => b.updatedAt - a.updatedAt)
             res.json({
                 users,
                 totalPages: Math.ceil(count / limit),
@@ -96,7 +96,7 @@ export const userInfo = async (req, res) => {
         let sizeHelped = helped.length;
         let images = [];
         let videos = [];
-        payment.sort((a, b) => b.createdAt - a.createdAt);
+        payment.sort((a, b) => b.updatedAt - a.updatedAt);
         posts.map((post) => images.push(...post.images));
         posts.map((post) => videos.push(...post.videos));
         return res.json({ user: user, sizePosts, sizeHelped, payment, images, videos, message: success });

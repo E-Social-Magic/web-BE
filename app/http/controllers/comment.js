@@ -40,7 +40,7 @@ export const createComment = [
                             correct: false,
                             images: images,
                             avatar: user.avatar,
-                            voteups: 0,
+                            votes: 0,
                             voteups: [],
                             votedowns: []
                         }
@@ -148,6 +148,11 @@ export const vote = async (req, res, next) => {
             } else {
                 updatedPost = await Post.findByIdAndUpdate(
                     { _id: postId },
+                    { $pull: { "comments.$[id].votedowns": userId } },
+                    { arrayFilters: [{ "id._id": commentId }], returnOriginal: false }
+                );
+                updatedPost = await Post.findByIdAndUpdate(
+                    { _id: postId },
                     { $push: { "comments.$[id].voteups": userId } },
                     { arrayFilters: [{ "id._id": commentId }], returnOriginal: false }
                 );
@@ -161,6 +166,11 @@ export const vote = async (req, res, next) => {
                     { arrayFilters: [{ "id._id": commentId }], returnOriginal: false }
                 );
             } else {
+                updatedPost = await Post.findByIdAndUpdate(
+                    { _id: postId },
+                    { $pull: { "comments.$[id].voteups": userId } },
+                    { arrayFilters: [{ "id._id": commentId }], returnOriginal: false }
+                );
                 updatedPost = await Post.findByIdAndUpdate(
                     { _id: postId },
                     { $push: { "comments.$[id].votedowns": userId } },

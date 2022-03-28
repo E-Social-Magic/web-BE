@@ -32,7 +32,7 @@ export const listPost = [
                     .skip((offset - 1) * limit)
                     .exec();
                 const count = await Post.countDocuments();
-                posts.sort((a, b) => b.createdAt - a.createdAt)
+                posts.sort((a, b) => b.updatedAt - a.updatedAt)
                 return res.json({
                     posts,
                     totalPages: Math.ceil(count / limit),
@@ -40,7 +40,7 @@ export const listPost = [
                     message: success
                 });
             }
-            if(req.query.group_id){
+            if (req.query.group_id) {
                 const posts = await Post.find({
                     $and: [
                         { blocked: { $ne: true } },
@@ -52,7 +52,7 @@ export const listPost = [
                     .skip((offset - 1) * limit)
                     .exec();
                 const count = await Post.countDocuments();
-                posts.sort((a, b) => b.createdAt - a.createdAt)
+                posts.sort((a, b) => b.updatedAt - a.updatedAt)
                 return res.json({
                     posts,
                     totalPages: Math.ceil(count / limit),
@@ -71,7 +71,7 @@ export const listPost = [
                     .skip((offset - 1) * limit)
                     .exec();
                 const count = await Post.countDocuments();
-                posts.sort((a, b) => b.createdAt - a.createdAt)
+                posts.sort((a, b) => b.updatedAt - a.updatedAt)
                 return res.json({
                     posts,
                     totalPages: Math.ceil(count / limit),
@@ -97,7 +97,7 @@ export const listPostForAd = [
                     .skip((offset - 1) * limit)
                     .exec();
                 const count = await Post.countDocuments();
-                posts.sort((a, b) => b.createdAt - a.createdAt)
+                posts.sort((a, b) => b.updatedAt - a.updatedAt)
                 return res.json({
                     posts,
                     totalPages: Math.ceil(count / limit),
@@ -115,7 +115,7 @@ export const listPostForAd = [
                     .skip((offset - 1) * limit)
                     .exec();
                 const count = await Post.countDocuments();
-                posts.sort((a, b) => b.createdAt - a.createdAt)
+                posts.sort((a, b) => b.updatedAt - a.updatedAt)
                 return res.json({
                     posts, totalPages: Math.ceil(count / limit),
                     currentPage: offset, message: success
@@ -175,13 +175,13 @@ export const createPost = [
     uploadImage.array("files"),
     async (req, res, next) => {
         if (!req.body.title) {
-            return res.json({message: "Tiêu đề không được để trống."})
+            return res.json({ message: "Tiêu đề không được để trống." })
         }
         if (!req.body.content) {
-            return res.json({message:"Nội dung không được để trống."})
+            return res.json({ message: "Nội dung không được để trống." })
         }
         if (!req.body.group_id) {
-            return res.json({message:"Hãy chọn nhóm mà bạn muốn đăng bài."})
+            return res.json({ message: "Hãy chọn nhóm mà bạn muốn đăng bài." })
         }
         const group_id = new ObjectId(req.body.group_id);
         const user = await User.findOne({ _id: req.user.user_id });
@@ -273,7 +273,7 @@ export const createPostAnonymously = async (req, res, next) => {
     const user = await User.findById(req.user.user_id);
     const post = new Post(req.body);
     post.user_id = req.user.user_id;
-    post.author_avatar = user.avatar;
+    post.author_avatar = "";
     post.username = "Ẩn danh";
     post.hideName = true;
     post.group_id = req.body.group_id;
@@ -303,7 +303,7 @@ export const createPostAnonymouslyCosts = async (req, res, next) => {
             const user = await User.findById(req.user.user_id);
             const post = new Post(req.body);
             post.user_id = req.user.user_id;
-            post.author_avatar = user.avatar;
+            post.author_avatar = "";
             post.username = "Ẩn danh";
             post.hideName = true;
             post.costs = true;
@@ -385,16 +385,12 @@ export const vote = async (req, res, next) => {
         const postId = req.params.id;
         const up = req.query.up;
         const down = req.query.down;
-        // case 1 neu query up =true
         const post = await Post.findById(postId);
-        //case 1 thiếu query
         if (!up && !down) {
             return res.json("Nothing to do")
         }
-        // case 2 neu query up = true
         if (up == "true") {
             if (post.voteups.includes(userId)) {
-                // xoa user do ra khoi array
                 await Post.findByIdAndUpdate(
                     { _id: postId },
                     {
@@ -405,7 +401,15 @@ export const vote = async (req, res, next) => {
                     { returnOriginal: false }
                 );
             } else {
-                //them user do vao array
+                await Post.findByIdAndUpdate(
+                    { _id: postId },
+                    {
+                        $pull: {
+                            "votedowns": userId
+                        }
+                    },
+                    { returnOriginal: false }
+                );
                 await Post.findByIdAndUpdate(
                     { _id: postId },
                     {
@@ -417,10 +421,8 @@ export const vote = async (req, res, next) => {
                 );
             }
         }
-        // case 3 neu query down = true
         if (down == "true") {
             if (post.votedowns.includes(userId)) {
-                // xoa user do ra khoi array
                 await Post.findByIdAndUpdate(
                     { _id: postId },
                     {
@@ -430,8 +432,17 @@ export const vote = async (req, res, next) => {
                     },
                     { returnOriginal: false }
                 );
-            } else {
-                //them user do vao array
+            }
+            else {
+                await Post.findByIdAndUpdate(
+                    { _id: postId },
+                    {
+                        $pull: {
+                            "voteups": userId
+                        }
+                    },
+                    { returnOriginal: false }
+                );
                 await Post.findByIdAndUpdate(
                     { _id: postId },
                     {
