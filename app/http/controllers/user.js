@@ -350,13 +350,15 @@ export const markCorrectAnswer = [
                 req.owner = {}
                 req.owner.user_id = post.user_id
                 req.owner.username = owner.username
-                req.owner.amount = coinsOfOwner
+                req.owner.amount = ((10 / 100) * post.coins)
                 req.owner.resultCode = 0
+                req.owner.accountBalance = coinsOfOwner
                 req.helper = {}
                 req.helper.user_id = user_id
                 req.helper.username = helper.username
-                req.helper.amount = coinsOfHelper
+                req.helper.amount = (post.coins - ((10 / 100) * post.coins))
                 req.helper.resultCode = 0
+                req.helper.accountBalance = coinsOfHelper
                 if (post)
                     next()
                 // return res.json({ owner: owner.coins, helper: helper.coins, message: 'Đánh dấu câu trả lời đúng thành công!' });

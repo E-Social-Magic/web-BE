@@ -232,7 +232,7 @@ export const confirmReq = async (req, res) => {
                     { _id: req.params.id },
                     {
                         resultCode: "0",
-                        message: "Thành công."
+                        message: "Giao dịch thành công."
                     },
                     { returnOriginal: false }
                 );
@@ -277,11 +277,10 @@ export const createPaymentInCoins = async (req, res, next) => {
             data.message = "Giao dịch thành công.";
             data.type = "in";
             data.typeTransfer = "coins";
-            const coinsOfUser = data.amount;
-            data.accountBalance = coinsOfUser;
+            data.accountBalance = req.helper.accountBalance;
             await User.findByIdAndUpdate(
                 { _id: req.helper.user_id },
-                { coins: coinsOfUser }
+                { coins: data.accountBalance }
             );
             data.save();
             next()
@@ -306,11 +305,10 @@ export const createPaymentOutCoins = async (req, res, next) => {
             data.message = "Giao dịch thành công.";
             data.type = "out";
             data.typeTransfer = "coins";
-            const coinsOfUser = data.amount;
-            data.accountBalance = coinsOfUser;
+            data.accountBalance = req.owner.accountBalance;
             await User.findByIdAndUpdate(
                 { _id: req.owner.user_id },
-                { coins: coinsOfUser }
+                { coins: data.accountBalance }
             );
             data.save();
             next()

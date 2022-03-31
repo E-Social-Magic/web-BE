@@ -273,7 +273,7 @@ export const createPostAnonymously = async (req, res, next) => {
     const user = await User.findById(req.user.user_id);
     const post = new Post(req.body);
     post.user_id = req.user.user_id;
-    post.author_avatar = "";
+    post.author_avatar = user.avatar;
     post.username = "Ẩn danh";
     post.hideName = true;
     post.group_id = req.body.group_id;
@@ -303,7 +303,7 @@ export const createPostAnonymouslyCosts = async (req, res, next) => {
             const user = await User.findById(req.user.user_id);
             const post = new Post(req.body);
             post.user_id = req.user.user_id;
-            post.author_avatar = "";
+            post.author_avatar = user.avatar;
             post.username = "Ẩn danh";
             post.hideName = true;
             post.costs = true;
